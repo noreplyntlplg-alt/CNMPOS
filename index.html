@@ -1,993 +1,1658 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cinema Ticketing System - Major Cineplex Style</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
-    
-    <!-- JS Libraries สำหรับ บาร์โค้ด, คิวอาร์โค้ด และการแปลง DOM เป็น ภาพขาวดำ -->
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบบริหารจัดการโรงภาพยนตร์ - Cinema POS System</title>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Font Sarabun -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap">
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <style>
-        /* ==========================================================
-           CSS DESIGN: Major Cineplex Premium Dark Theme (No Emojis)
-           ========================================================== */
-        :root {
-            --major-gold: #d4af37;
-            --major-gold-hover: #f3ca40;
-            --major-red: #e50914;
-            --bg-main: #0b0c10;
-            --bg-card: #14161d;
-            --bg-input: #1f222e;
-            --border-color: #2a2e3d;
-            --text-main: #ffffff;
-            --text-muted: #9aa0a6;
-            --seat-blue: #1e88e5;
-            --seat-red: #e53935;
-            --seat-booked: #373b4e;
-            --seat-selected: #43a047;
-        }
+  <style>
+    :root {
+      --primary-red: #C8102E;
+      --dark-red: #8B0000;
+      --gold: #FFD700;
+      --bg-dark: #121212;
+      --card-bg: #1E1E1E;
+      --sidebar-bg: #181818;
+      --seat-blue: #1E88E5;
+      --seat-red: #E53935;
+      --seat-disabled: #424242;
+      --seat-selected: #4CAF50;
+      --text-main: #FFFFFF;
+      --text-muted: #AAAAAA;
+      --border-color: #333333;
+    }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Sarabun', sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); -webkit-font-smoothing: antialiased; }
-        .hidden { display: none !important; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Sarabun', sans-serif;
+    }
 
-        /* SVG Icon Helper */
-        .icon { width: 18px; height: 18px; fill: currentColor; vertical-align: middle; display: inline-block; }
-        .icon-lg { width: 22px; height: 22px; }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-        /* General UI Elements */
-        button {
-            background: var(--major-gold);
-            color: #000000;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-        }
-        button:hover { background: var(--major-gold-hover); }
-        button:disabled { background: #333745; color: #6c727f; cursor: not-allowed; }
-        button.btn-secondary { background: #2a2e3d; color: var(--text-main); }
-        button.btn-secondary:hover { background: #373b4e; }
-        button.btn-danger { background: var(--major-red); color: #fff; }
+    /* Navbar Header Style Major Cinema */
+    header {
+      background: linear-gradient(180deg, #1f0003 0%, #0d0d0d 100%);
+      border-bottom: 2px solid var(--primary-red);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+    }
 
-        input, select {
-            padding: 10px 14px;
-            border-radius: 4px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-input);
-            color: var(--text-main);
-            width: 100%;
-            margin-bottom: 14px;
-            font-size: 14px;
-            outline: none;
-        }
-        input:focus, select:focus { border-color: var(--major-gold); }
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
 
-        /* Header Navigation */
-        header {
-            background: var(--bg-card);
-            padding: 12px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid var(--major-gold);
-        }
-        .brand-logo { display: flex; align-items: center; gap: 12px; }
-        .brand-logo img { max-height: 36px; }
-        .brand-logo span { font-size: 18px; font-weight: 700; color: var(--major-gold); letter-spacing: 1px; }
+    .brand-logo img {
+      max-height: 45px;
+      max-width: 150px;
+      object-fit: contain;
+    }
 
-        /* Login Interface */
-        #login-screen { display: flex; justify-content: center; align-items: center; height: 100vh; background: radial-gradient(circle at center, #1a1c24 0%, #0b0c10 100%); }
-        .login-card {
-            background: var(--bg-card);
-            padding: 40px;
-            border-radius: 8px;
-            width: 380px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            text-align: center;
-        }
-        .login-card h2 { color: var(--major-gold); margin-bottom: 8px; font-size: 22px; }
-        .login-card p { color: var(--text-muted); font-size: 13px; margin-bottom: 24px; }
-        .login-card button { width: 100%; margin-bottom: 12px; }
+    .brand-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
 
-        /* Admin Dashboard Layout */
-        #admin-screen { display: flex; height: calc(100vh - 62px); }
-        .sidebar { width: 240px; background: var(--bg-card); padding: 20px 10px; border-right: 1px solid var(--border-color); }
-        .sidebar button {
-            width: 100%;
-            justify-content: flex-start;
-            background: transparent;
-            color: var(--text-muted);
-            border-radius: 4px;
-            margin-bottom: 6px;
-            padding: 12px 16px;
-            border-left: 3px solid transparent;
-        }
-        .sidebar button.active, .sidebar button:hover { background: var(--bg-input); color: var(--major-gold); border-left-color: var(--major-gold); }
-        .main-content { flex: 1; padding: 28px; overflow-y: auto; }
-        .card-panel { background: var(--bg-card); padding: 24px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+    .nav-tabs {
+      display: flex;
+      gap: 10px;
+      background: rgba(255,255,255,0.05);
+      padding: 4px;
+      border-radius: 8px;
+    }
 
-        /* POS Staff Interface */
-        #staff-screen { display: flex; height: calc(100vh - 62px); }
-        .pos-left { flex: 3; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
-        .pos-right { width: 340px; background: var(--bg-card); padding: 20px; border-left: 1px solid var(--border-color); display: flex; flex-direction: column; }
-        .filter-header { display: flex; gap: 12px; background: var(--bg-card); padding: 16px; border-radius: 6px; border: 1px solid var(--border-color); }
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-        /* Screen & Cinema Seat Layout */
-        .screen-container {
-            background: #000;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 30px 20px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .screen-arch {
-            width: 75%;
-            height: 26px;
-            border-top: 4px solid var(--major-gold);
-            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-            text-align: center;
-            line-height: 20px;
-            font-size: 11px;
-            letter-spacing: 6px;
-            color: var(--major-gold);
-            margin-bottom: 45px;
-            box-shadow: 0 -10px 20px rgba(212, 175, 55, 0.15);
-        }
-        .seat-grid { display: flex; flex-direction: column; gap: 10px; }
-        .seat-row { display: flex; gap: 10px; align-items: center; }
-        .row-name { width: 24px; font-weight: 700; color: var(--text-muted); font-size: 13px; text-align: center; }
-        .seat-box {
-            width: 36px;
-            height: 36px;
-            border-radius: 6px 6px 2px 2px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.3);
-        }
-        .seat-box.blue { background: var(--seat-blue); color: #fff; }
-        .seat-box.red { background: var(--seat-red); color: #fff; }
-        .seat-box.booked { background: var(--seat-booked); color: #6c727f; cursor: not-allowed; box-shadow: none; opacity: 0.6; }
-        .seat-box.selected { background: var(--seat-selected); color: #fff; transform: scale(1.1); box-shadow: 0 0 10px var(--seat-selected); }
+    .nav-btn:hover {
+      color: var(--text-main);
+      background: rgba(255,255,255,0.1);
+    }
 
-        /* Cart Summary & Printer Section */
-        .printer-status-box {
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            text-align: center;
-        }
-        .status-badge { font-size: 12px; margin-top: 6px; color: var(--text-muted); display: block; }
-        .cart-box { flex: 1; border: 1px solid var(--border-color); background: var(--bg-main); border-radius: 6px; padding: 12px; overflow-y: auto; margin-bottom: 16px; }
-        .cart-row { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding: 8px 0; font-size: 14px; }
-        .total-amount { font-size: 22px; font-weight: 700; color: var(--major-gold); text-align: right; margin-bottom: 16px; }
+    .nav-btn.active {
+      background: var(--primary-red);
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(200, 16, 46, 0.4);
+    }
 
-        /* Tables */
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
-        th, td { border: 1px solid var(--border-color); padding: 10px 14px; text-align: left; }
-        th { background: var(--bg-input); color: var(--major-gold); font-weight: 600; }
+    /* Connection Settings Banner */
+    .api-config-bar {
+      background-color: #1a1a1a;
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.85rem;
+    }
 
-        /* Overlay Loader */
-        #loader { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .spinner { border: 3px solid var(--border-color); border-top: 3px solid var(--major-gold); border-radius: 50%; width: 44px; height: 44px; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .api-config-bar input {
+      flex: 1;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
 
-        /* ==========================================================
-           RECEIPT TEMPLATE (80mm Thermal Paper Render Container)
-           ========================================================== */
-        #receipt-render-zone {
-            position: absolute;
-            left: -9999px;
-            top: -9999px;
-            width: 550px; /* High Resolution Canvas Render Width for Crisp Thermal Text */
-            background: #ffffff;
-            color: #000000;
-            padding: 24px;
-            font-family: 'Sarabun', sans-serif;
-            box-sizing: border-box;
-        }
-        .rc-header { text-align: center; margin-bottom: 12px; }
-        .rc-logo { max-width: 140px; height: auto; margin-bottom: 8px; }
-        .rc-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-        .rc-subtitle { font-size: 16px; color: #333; }
-        .rc-divider { border-top: 2px dashed #000; margin: 12px 0; }
-        .rc-row { display: flex; justify-content: space-between; font-size: 18px; margin-bottom: 6px; }
-        .rc-bold { font-weight: 700; font-size: 20px; }
-        .rc-center { text-align: center; margin-top: 12px; }
-        .rc-barcode-container { text-align: center; margin: 12px 0 6px 0; }
-        .rc-barcode-container svg { max-width: 100%; height: 70px; }
-        .rc-qrcode-container { text-align: center; margin: 6px 0 12px 0; }
-        .rc-qrcode-container canvas { width: 140px !important; height: 140px !important; }
-    </style>
+    .btn-save-api {
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-save-api:hover {
+      background: #444;
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tab-content {
+      display: none;
+      height: 100%;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    /* Staff POS Layout */
+    .pos-container {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .pos-main-panel {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-color);
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 15px;
+      background: #181818;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      align-items: center;
+      border: 1px solid var(--border-color);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    select, input[type="text"], input[type="number"], input[type="time"], input[type="date"], textarea {
+      background: #2A2A2A;
+      border: 1px solid #444444;
+      color: #FFFFFF;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--primary-red);
+    }
+
+    .btn-search {
+      background: linear-gradient(135deg, var(--primary-red), var(--dark-red));
+      color: white;
+      border: none;
+      padding: 11px 24px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      transition: background 0.2s;
+    }
+
+    .btn-search:hover {
+      filter: brightness(1.1);
+    }
+
+    /* Screen Perspective */
+    .screen-wrapper {
+      text-align: center;
+      margin: 20px 0 35px 0;
+      perspective: 400px;
+    }
+
+    .screen-bar {
+      background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,0.2) 100%);
+      height: 12px;
+      width: 75%;
+      margin: 0 auto 10px auto;
+      border-radius: 4px;
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
+      transform: rotateX(-10deg);
+    }
+
+    .screen-text {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      letter-spacing: 3px;
+    }
+
+    /* Seats Matrix Layout */
+    .seats-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .seat-legend {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 25px;
+      background: #181818;
+      padding: 10px 20px;
+      border-radius: 20px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+    }
+
+    .seat-icon-demo {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+    }
+
+    .seat-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .seat-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .row-label {
+      width: 25px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--gold);
+    }
+
+    .seat {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+      color: #fff;
+    }
+
+    .seat.blue {
+      background-color: var(--seat-blue);
+      border: 1px solid #1565C0;
+    }
+
+    .seat.red {
+      background-color: var(--seat-red);
+      border: 1px solid #C62828;
+    }
+
+    .seat.selected {
+      background-color: var(--seat-selected) !important;
+      transform: scale(1.15);
+      box-shadow: 0 0 10px var(--seat-selected);
+    }
+
+    .seat.disabled {
+      background-color: var(--seat-disabled) !important;
+      color: #888888;
+      cursor: not-allowed;
+      border: none;
+    }
+
+    /* Right Checkout Panel */
+    .pos-summary-panel {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-color);
+    }
+
+    .summary-header {
+      font-size: 1.2rem;
+      font-weight: 700;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .movie-mini-info {
+      display: flex;
+      gap: 15px;
+      margin: 15px 0;
+      background: #181818;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .movie-mini-poster {
+      width: 70px;
+      height: 95px;
+      background: #2a2a2a;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    .movie-mini-details {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .selected-seats-box {
+      flex: 1;
+      background: #181818;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 15px;
+      overflow-y: auto;
+      min-height: 120px;
+    }
+
+    .seat-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(200, 16, 46, 0.2);
+      border: 1px solid var(--primary-red);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      margin: 3px;
+    }
+
+    .total-price-box {
+      background: #141414;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border: 1px solid var(--border-color);
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .price-row.grand-total {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--gold);
+      border-top: 1px solid #333;
+      padding-top: 8px;
+      margin-bottom: 0;
+    }
+
+    .btn-pay {
+      background: linear-gradient(135deg, #4CAF50, #2E7D32);
+      color: white;
+      border: none;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+      transition: all 0.2s;
+    }
+
+    .btn-pay:hover {
+      filter: brightness(1.1);
+    }
+
+    /* Admin Panel Layout */
+    .admin-container {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .admin-sidebar {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .admin-menu-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 12px 16px;
+      border-radius: 6px;
+      text-align: left;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+
+    .admin-menu-btn:hover {
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+    }
+
+    .admin-menu-btn.active {
+      background: var(--primary-red);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .admin-content-panel {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 25px;
+      border: 1px solid var(--border-color);
+      overflow-y: auto;
+    }
+
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .btn-submit {
+      background: var(--primary-red);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-submit:hover {
+      background: var(--dark-red);
+    }
+
+    /* Table Styling */
+    .data-table-wrapper {
+      margin-top: 25px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #181818;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: #252525;
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background: rgba(255,255,255,0.02);
+    }
+
+    .table-poster {
+      width: 40px;
+      height: 55px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    /* Print Ticket Area - Strictly 80mm Receipt Thermal Format */
+    #printable-ticket {
+      display: none;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      #printable-ticket, #printable-ticket * {
+        visibility: visible;
+      }
+
+      #printable-ticket {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 78mm;
+        padding: 5mm;
+        margin: 0;
+        background: #FFFFFF;
+        color: #000000;
+        font-family: 'Sarabun', sans-serif;
+        font-size: 12px;
+        line-height: 1.3;
+      }
+
+      .ticket-header {
+        text-align: center;
+        border-bottom: 1px dashed #000;
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+      }
+
+      .ticket-logo {
+        max-width: 120px;
+        max-height: 50px;
+        object-fit: contain;
+        margin-bottom: 5px;
+      }
+
+      .ticket-title {
+        font-size: 16px;
+        font-weight: bold;
+      }
+
+      .ticket-body {
+        margin-bottom: 10px;
+      }
+
+      .ticket-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+
+      .ticket-seats {
+        font-size: 16px;
+        font-weight: bold;
+        text-align: center;
+        background: #000;
+        color: #fff;
+        padding: 4px;
+        margin: 8px 0;
+      }
+
+      .ticket-footer {
+        text-align: center;
+        border-top: 1px dashed #000;
+        padding-top: 8px;
+        font-size: 10px;
+      }
+
+      .barcode-stub {
+        text-align: center;
+        margin-top: 10px;
+        letter-spacing: 4px;
+        font-family: monospace;
+        font-weight: bold;
+      }
+    }
+  </style>
 </head>
 <body>
 
-    <!-- SVG Icons Definitions -->
-    <svg style="display: none;">
-        <symbol id="icon-cinema" viewBox="0 0 24 24"><path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></symbol>
-        <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></symbol>
-        <symbol id="icon-movie" viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></symbol>
-        <symbol id="icon-time" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></symbol>
-        <symbol id="icon-user" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></symbol>
-        <symbol id="icon-report" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></symbol>
-        <symbol id="icon-print" viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></symbol>
-        <symbol id="icon-search" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></symbol>
-    </svg>
-
-    <!-- Global Loader -->
-    <div id="loader" class="hidden">
-        <div class="spinner"></div>
-        <div id="loader-text" style="color: var(--major-gold); font-weight: 600;">กำลังดำเนินการ...</div>
+  <!-- Top Navbar Header -->
+  <header>
+    <div class="brand-logo">
+      <img id="app-logo" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='40'><rect width='100' height='40' fill='%23C8102E'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='%23FFD700' font-weight='bold' font-size='14'>MAJOR</text></svg>" alt="Logo">
+      <span class="brand-title" id="app-title">MAJOR CINEMA POS</span>
     </div>
 
-    <!-- Hidden Receipt Render Container (สำหรับการแปลงเป็นรูปภาพ) -->
-    <div id="receipt-render-zone">
-        <div class="rc-header">
-            <img id="rc-img-logo" class="rc-logo" src="" style="display:none;">
-            <div id="rc-txt-shopname" class="rc-title">MY CINEMA</div>
-            <div id="rc-txt-head" class="rc-subtitle">ยินดีต้อนรับสู่โรงภาพยนตร์</div>
-        </div>
-        <div class="rc-divider"></div>
-        <div class="rc-row"><span>ภาพยนตร์:</span> <span id="rc-txt-movie" class="rc-bold">-</span></div>
-        <div class="rc-row"><span>วันที่ฉาย:</span> <span id="rc-txt-date">-</span></div>
-        <div class="rc-row"><span>รอบเวลา:</span> <span id="rc-txt-time" class="rc-bold">-</span></div>
-        <div class="rc-divider"></div>
-        <div class="rc-row"><span>ที่นั่ง (Seats):</span> <span id="rc-txt-seats" class="rc-bold">-</span></div>
-        <div class="rc-row"><span>การชำระเงิน:</span> <span id="rc-txt-payment">-</span></div>
-        <div class="rc-row rc-bold" style="font-size:22px; margin-top:8px;">
-            <span>ยอดชำระสุทธิ:</span> <span id="rc-txt-total">0 บาท</span>
-        </div>
-        <div class="rc-divider"></div>
+    <div class="nav-tabs">
+      <button class="nav-btn active" onclick="switchMainTab('pos')">
+        <i class="fa-solid fa-cash-register"></i> หน้าพนักงาน (POS)
+      </button>
+      <button class="nav-btn" onclick="switchMainTab('admin')">
+        <i class="fa-solid fa-user-gear"></i> ผู้ดูแลระบบ (Admin)
+      </button>
+    </div>
+  </header>
+
+  <!-- Google Apps Script API Connection Config -->
+  <div class="api-config-bar">
+    <i class="fa-solid fa-link" style="color: var(--gold);"></i>
+    <span>Google Apps Script Web App URL:</span>
+    <input type="text" id="api-url-input" placeholder="https://script.google.com/macros/s/AKfycbylz-ZxtDp8t91c7Iun5makvv6g997u5s3KH7RohJPla6c8GmXZYTTz9XPY8MT_6dTI/exec">
+    <button class="btn-save-api" onclick="saveApiUrl()"><i class="fa-solid fa-floppy-disk"></i> บันทึกเชื่อมต่อ</button>
+  </div>
+
+  <!-- Main Application Body -->
+  <main>
+    
+    <!-- TAB 1: POS พนักงาน -->
+    <div id="tab-pos" class="tab-content active">
+      <div class="pos-container">
         
-        <!-- บาร์โค้ด (Barcode รหัสใบเสร็จ) -->
-        <div class="rc-barcode-container">
-            <svg id="rc-svg-barcode"></svg>
-            <div id="rc-txt-ref" style="font-size:14px; font-weight:600; font-family: monospace;">Ref: -</div>
+        <!-- Left Area: Selection & Seats -->
+        <div class="pos-main-panel">
+          
+          <div class="filter-bar">
+            <div class="form-group">
+              <label><i class="fa-solid fa-film"></i> เลือกภาพยนตร์</label>
+              <select id="pos-movie-select" onchange="onPosMovieChange()">
+                <option value="">-- กรุณาเลือกหนัง --</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label><i class="fa-solid fa-clock"></i> เลือกรอบฉาย</label>
+              <select id="pos-showtime-select">
+                <option value="">-- กรุณาเลือกรอบฉาย --</option>
+              </select>
+            </div>
+
+            <button class="btn-search" onclick="loadShowtimeSeats()">
+              <i class="fa-solid fa-magnifying-glass"></i> ค้นหาผังที่นั่ง
+            </button>
+          </div>
+
+          <!-- Seats Screen & Map -->
+          <div class="seats-area">
+            <div class="screen-wrapper">
+              <div class="screen-bar"></div>
+              <div class="screen-text"><i class="fa-solid fa-display"></i> หน้าจอภาพยนตร์ (SCREEN)</div>
+            </div>
+
+            <div class="seat-legend">
+              <div class="legend-item">
+                <div class="seat-icon-demo" style="background-color: var(--seat-blue);"></div>
+                <span>ปกติ (เก้าอี้ฟ้า)</span>
+              </div>
+              <div class="legend-item">
+                <div class="seat-icon-demo" style="background-color: var(--seat-red);"></div>
+                <span>ฮันนีมูน (เก้าอี้แดง)</span>
+              </div>
+              <div class="legend-item">
+                <div class="seat-icon-demo" style="background-color: var(--seat-selected);"></div>
+                <span>เลือกแล้ว</span>
+              </div>
+              <div class="legend-item">
+                <div class="seat-icon-demo" style="background-color: var(--seat-disabled);"></div>
+                <span>ขายแล้ว (สีเทา)</span>
+              </div>
+            </div>
+
+            <!-- Seat Interactive Grid -->
+            <div id="seat-grid-container" class="seat-grid">
+              <div style="text-align: center; color: var(--text-muted); margin-top: 40px;">
+                <i class="fa-solid fa-couch" style="font-size: 3rem; margin-bottom: 10px; display: block;"></i>
+                กรุณาเลือกภาพยนตร์ รอบฉาย และกด "ค้นหาผังที่นั่ง"
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <!-- คิวอาร์โค้ด (QR Code ตรวจตั๋วหนัง) -->
-        <div class="rc-qrcode-container">
-            <canvas id="rc-cvs-qrcode"></canvas>
-            <div style="font-size:12px; color:#555;">Scan QR Code for Gate Entry</div>
+        <!-- Right Area: Summary & Payment -->
+        <div class="pos-summary-panel">
+          <div class="summary-header">
+            <i class="fa-solid fa-receipt"></i> สรุปรายการสั่งซื้อ
+          </div>
+
+          <div class="movie-mini-info">
+            <img id="summary-poster" class="movie-mini-poster" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='70' height='95' fill='%23333'><text x='50%' y='50%' fill='%23666' text-anchor='middle'>No Image</text></svg>">
+            <div class="movie-mini-details">
+              <strong id="summary-title" style="color: var(--gold); font-size: 1rem;">-</strong>
+              <span id="summary-hall" style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-door-open"></i> โรง: -</span>
+              <span id="summary-time" style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-regular fa-clock"></i> เวลา: -</span>
+            </div>
+          </div>
+
+          <div style="font-size: 0.9rem; margin-bottom: 6px; color: var(--text-muted);">ที่นั่งที่เลือก:</div>
+          <div id="selected-seats-container" class="selected-seats-box">
+            <span style="color: #666; font-size: 0.85rem;">ยังไม่ได้เลือกที่นั่ง</span>
+          </div>
+
+          <div class="total-price-box">
+            <div class="price-row">
+              <span>จำนวนที่นั่ง:</span>
+              <span id="summary-seat-count">0 ที่นั่ง</span>
+            </div>
+            <div class="price-row grand-total">
+              <span>ราคารวม:</span>
+              <span id="summary-total-price">0 ฿</span>
+            </div>
+          </div>
+
+          <button class="btn-pay" onclick="processPayment()">
+            <i class="fa-solid fa-credit-card"></i> ชำระเงิน & ออกตั๋ว
+          </button>
         </div>
 
-        <div class="rc-divider"></div>
-        <div class="rc-center">
-            <div id="rc-txt-timestamp" style="font-size:13px;">-</div>
-            <div id="rc-txt-foot" style="font-size:13px; margin-top:4px;">ซื้อแล้วไม่รับคืนเงินทุกกรณี</div>
-        </div>
+      </div>
     </div>
 
-    <!-- Login Screen -->
-    <div id="login-screen">
-        <div class="login-card">
-            <svg class="icon icon-lg" style="color:var(--major-gold); margin-bottom: 12px;"><use href="#icon-cinema"></use></svg>
-            <h2>CINEMA TICKETING</h2>
-            <p>กรุณาเลือกระบบปฏิบัติการที่ต้องการเข้าถึง</p>
-            <button onclick="login('admin')">
-                <svg class="icon"><use href="#icon-settings"></use></svg> ผู้ดูแลระบบ (Admin)
-            </button>
-            <button class="btn-secondary" onclick="login('staff')">
-                <svg class="icon"><use href="#icon-user"></use></svg> พนักงานจำหน่ายตั๋ว (POS Staff)
-            </button>
-            <button class="btn-secondary" style="margin-top: 20px; border-color: var(--major-gold); color: var(--major-gold);" onclick="initDatabase()">
-                สร้าง/ซ่อมแซมฐานข้อมูลตาราง
-            </button>
+    <!-- TAB 2: Admin ผู้ดูแลระบบ -->
+    <div id="tab-admin" class="tab-content">
+      <div class="admin-container">
+        
+        <!-- Admin Menu Navigation Sidebar -->
+        <div class="admin-sidebar">
+          <button class="admin-menu-btn active" onclick="switchAdminSubTab('settings')">
+            <i class="fa-solid fa-sliders"></i> ตั้งค่าระบบ
+          </button>
+          <button class="admin-menu-btn" onclick="switchAdminSubTab('movies')">
+            <i class="fa-solid fa-clapperboard"></i> จัดการภาพยนตร์
+          </button>
+          <button class="admin-menu-btn" onclick="switchAdminSubTab('showtimes')">
+            <i class="fa-solid fa-calendar-days"></i> จัดการรอบฉาย
+          </button>
+          <button class="admin-menu-btn" onclick="switchAdminSubTab('staff')">
+            <i class="fa-solid fa-users"></i> จัดการพนักงาน
+          </button>
+          <button class="admin-menu-btn" onclick="switchAdminSubTab('reports')">
+            <i class="fa-solid fa-chart-line"></i> สรุปยอดขาย
+          </button>
         </div>
+
+        <!-- Admin Content Panel -->
+        <div class="admin-content-panel">
+          
+          <!-- SUB-TAB 1: ตั้งค่าระบบ -->
+          <div id="admin-sub-settings" class="admin-sub-content">
+            <div class="section-title"><i class="fa-solid fa-gear"></i> ตั้งค่าข้อมูลโรงภาพยนตร์และระบบ</div>
+            
+            <form id="form-settings" onsubmit="saveSystemSettings(event)">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label><i class="fa-solid fa-building"></i> ชื่อโรงภาพยนตร์ / ชื่อร้าน</label>
+                  <input type="text" id="setting-cinema-name" required value="MAJOR CINEMA POS">
+                </div>
+                <div class="form-group">
+                  <label><i class="fa-solid fa-image"></i> โลโก้ร้าน (อัปโหลดจากเครื่อง)</label>
+                  <input type="file" id="setting-logo-file" accept="image/*" onchange="convertLogoToBase64()">
+                  <input type="hidden" id="setting-logo-base64">
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label><i class="fa-solid fa-heading"></i> ข้อความหัวตั๋ว/ใบเสร็จ</label>
+                  <input type="text" id="setting-receipt-header" value="ยินดีต้อนรับสู่โรงภาพยนตร์">
+                </div>
+                <div class="form-group">
+                  <label><i class="fa-solid fa-footing"></i> ข้อความท้ายตั๋ว/ใบเสร็จ</label>
+                  <input type="text" id="setting-receipt-footer" value="ขอบคุณที่ใช้บริการ โปรดเก็บตั๋วไว้เพื่อเข้าชม">
+                </div>
+              </div>
+
+              <div style="margin-bottom: 20px;">
+                <label style="font-size: 0.85rem; color: var(--text-muted);">ตัวอย่างโลโก้ปัจจุบัน:</label><br>
+                <img id="setting-logo-preview" style="max-height: 80px; margin-top: 8px; border: 1px solid #444; padding: 5px; border-radius: 4px;">
+              </div>
+
+              <button type="submit" class="btn-submit"><i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่า</button>
+            </form>
+          </div>
+
+          <!-- SUB-TAB 2: จัดการภาพยนตร์ -->
+          <div id="admin-sub-movies" class="admin-sub-content" style="display: none;">
+            <div class="section-title"><i class="fa-solid fa-film"></i> เพิ่มและจัดการข้อมูลภาพยนตร์</div>
+            
+            <form id="form-add-movie" onsubmit="saveNewMovie(event)">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>ชื่อภาพยนตร์</label>
+                  <input type="text" id="movie-title" required placeholder="เช่น AVENGERS ENDGAME">
+                </div>
+                <div class="form-group">
+                  <label>ความยาว (นาที)</label>
+                  <input type="number" id="movie-duration" required placeholder="เช่น 120">
+                </div>
+                <div class="form-group">
+                  <label>หมวดหมู่ / ประเภท</label>
+                  <input type="text" id="movie-genre" placeholder="เช่น แอคชั่น / แฟนตาซี">
+                </div>
+                <div class="form-group">
+                  <label>รูปปกภาพยนตร์ (เลือกจากเครื่อง)</label>
+                  <input type="file" id="movie-cover-file" accept="image/*" onchange="convertMovieCoverToBase64()">
+                  <input type="hidden" id="movie-cover-base64">
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 15px;">
+                <label>รายละเอียดภาพยนตร์ย่อ</label>
+                <textarea id="movie-description" rows="2" placeholder="เรื่องย่อภาพยนตร์..."></textarea>
+              </div>
+
+              <button type="submit" class="btn-submit"><i class="fa-solid fa-plus"></i> บันทึกเพิ่มภาพยนตร์</button>
+            </form>
+
+            <div class="data-table-wrapper">
+              <h4 style="margin-bottom: 10px; color: var(--gold);">รายการภาพยนตร์ทั้งหมด</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>รูปปก</th>
+                    <th>ชื่อเรื่อง</th>
+                    <th>ความยาว</th>
+                    <th>หมวดหมู่</th>
+                    <th>วันที่เพิ่ม</th>
+                  </tr>
+                </thead>
+                <tbody id="table-movies-body">
+                  <tr><td colspan="5" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SUB-TAB 3: จัดการรอบฉาย -->
+          <div id="admin-sub-showtimes" class="admin-sub-content" style="display: none;">
+            <div class="section-title"><i class="fa-solid fa-calendar-plus"></i> เพิ่มรอบฉายภาพยนตร์</div>
+            
+            <form id="form-add-showtime" onsubmit="saveNewShowtime(event)">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>เลือกภาพยนตร์</label>
+                  <select id="showtime-movie-select" required>
+                    <option value="">-- เลือกหนัง --</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>โรงภาพยนตร์ (Hall)</label>
+                  <select id="showtime-hall-select" required>
+                    <option value="CINEMA 1">CINEMA 1</option>
+                    <option value="CINEMA 2">CINEMA 2</option>
+                    <option value="CINEMA 3">CINEMA 3</option>
+                    <option value="IMAX">IMAX HALL</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>วันที่ฉาย</label>
+                  <input type="date" id="showtime-date" required>
+                </div>
+                <div class="form-group">
+                  <label>เวลาฉาย</label>
+                  <input type="time" id="showtime-time" required>
+                </div>
+                <div class="form-group">
+                  <label>ราคาเก้าอี้ฟ้า (Standard)</label>
+                  <input type="number" id="showtime-blue-price" value="160" required>
+                </div>
+                <div class="form-group">
+                  <label>ราคาเก้าอี้แดง (Honeymoon/VIP)</label>
+                  <input type="number" id="showtime-red-price" value="200" required>
+                </div>
+              </div>
+
+              <button type="submit" class="btn-submit"><i class="fa-solid fa-plus"></i> เพิ่มรอบฉาย</button>
+            </form>
+
+            <div class="data-table-wrapper">
+              <h4 style="margin-bottom: 10px; color: var(--gold);">ตารางรอบฉายทั้งหมด</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>เรื่อง</th>
+                    <th>โรง</th>
+                    <th>วันที่</th>
+                    <th>เวลา</th>
+                    <th>ราคา (ฟ้า/แดง)</th>
+                  </tr>
+                </thead>
+                <tbody id="table-showtimes-body">
+                  <tr><td colspan="5" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SUB-TAB 4: จัดการพนักงาน -->
+          <div id="admin-sub-staff" class="admin-sub-content" style="display: none;">
+            <div class="section-title"><i class="fa-solid fa-user-plus"></i> เพิ่มและจัดการพนักงาน</div>
+            
+            <form id="form-add-staff" onsubmit="saveNewStaff(event)">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>ชื่อ - นามสกุล พนักงาน</label>
+                  <input type="text" id="staff-name" required placeholder="สมชาย ใจดี">
+                </div>
+                <div class="form-group">
+                  <label>ตำแหน่ง / สิทธิ์</label>
+                  <select id="staff-role" required>
+                    <option value="พนักงานขายตั๋ว">พนักงานขายตั๋ว (Cashier)</option>
+                    <option value="ผู้ดูแลระบบ">ผู้ดูแลระบบ (Admin)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>รหัส PIN Access (4 หลัก)</label>
+                  <input type="text" id="staff-pin" maxlength="4" placeholder="1234" required>
+                </div>
+              </div>
+
+              <button type="submit" class="btn-submit"><i class="fa-solid fa-user-check"></i> เพิ่มพนักงาน</button>
+            </form>
+
+            <div class="data-table-wrapper">
+              <h4 style="margin-bottom: 10px; color: var(--gold);">รายชื่อพนักงานในระบบ</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>รหัส</th>
+                    <th>ชื่อพนักงาน</th>
+                    <th>ตำแหน่ง</th>
+                    <th>สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody id="table-staff-body">
+                  <tr><td colspan="4" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SUB-TAB 5: สรุปยอดขาย -->
+          <div id="admin-sub-reports" class="admin-sub-content" style="display: none;">
+            <div class="section-title"><i class="fa-solid fa-receipt"></i> ประวัติการออกตั๋วและสรุปยอดขาย</div>
+            <div class="data-table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>เลขที่รายการ</th>
+                    <th>ที่นั่ง</th>
+                    <th>ราคารวม</th>
+                    <th>การชำระเงิน</th>
+                    <th>พนักงาน</th>
+                    <th>วันที่/เวลา</th>
+                  </tr>
+                </thead>
+                <tbody id="table-reports-body">
+                  <tr><td colspan="6" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
     </div>
 
-    <!-- Header Bar -->
-    <header id="main-header" class="hidden">
-        <div class="brand-logo">
-            <img id="sys-logo" src="" alt="" style="display:none;">
-            <span id="sys-name">MAJOR CINEPLEX SYSTEM</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 16px;">
-            <span id="current-user" style="font-size: 14px; color: var(--text-muted);"></span>
-            <button class="btn-secondary" onclick="logout()" style="padding: 6px 12px; font-size: 13px;">ออกจากระบบ</button>
-        </div>
-    </header>
+  </main>
 
-    <!-- Admin Panel -->
-    <div id="admin-screen" class="hidden">
-        <div class="sidebar">
-            <button class="menu-btn active" onclick="showAdminTab('tab-settings', this)">
-                <svg class="icon"><use href="#icon-settings"></use></svg> ตั้งค่าระบบ
-            </button>
-            <button class="menu-btn" onclick="showAdminTab('tab-movies', this)">
-                <svg class="icon"><use href="#icon-movie"></use></svg> จัดการภาพยนตร์
-            </button>
-            <button class="menu-btn" onclick="showAdminTab('tab-showtimes', this)">
-                <svg class="icon"><use href="#icon-time"></use></svg> จัดการรอบฉาย
-            </button>
-            <button class="menu-btn" onclick="showAdminTab('tab-staff', this)">
-                <svg class="icon"><use href="#icon-user"></use></svg> จัดการพนักงาน
-            </button>
-            <button class="menu-btn" onclick="showAdminTab('tab-reports', this)">
-                <svg class="icon"><use href="#icon-report"></use></svg> ประวัติการขาย
-            </button>
-        </div>
-        <div class="main-content">
-            <!-- Settings Tab -->
-            <div id="tab-settings" class="admin-tab">
-                <h2 style="margin-bottom: 20px;">ตั้งค่าระบบร้านและใบเสร็จ</h2>
-                <div class="card-panel" style="max-width: 600px;">
-                    <label style="font-size:13px; color:var(--text-muted);">ชื่อโรงภาพยนตร์ / ร้านค้า</label>
-                    <input type="text" id="set-shopname">
-                    
-                    <label style="font-size:13px; color:var(--text-muted);">โลโก้ร้าน (เลือกไฟล์ภาพจากเครื่อง)</label>
-                    <input type="file" id="set-logo-file" accept="image/*" onchange="compressImage(this, 'set-logo-base64', 'logo-preview')">
-                    <img id="logo-preview" style="max-height: 80px; margin-bottom: 14px; display: block;">
-                    <input type="hidden" id="set-logo-base64">
-
-                    <label style="font-size:13px; color:var(--text-muted);">ข้อความหัวใบเสร็จ</label>
-                    <input type="text" id="set-receipt-head">
-
-                    <label style="font-size:13px; color:var(--text-muted);">ข้อความท้ายใบเสร็จ</label>
-                    <input type="text" id="set-receipt-foot">
-
-                    <button onclick="saveSettings()">บันทึกการตั้งค่า</button>
-                </div>
-            </div>
-
-            <!-- Movies Tab -->
-            <div id="tab-movies" class="admin-tab hidden">
-                <h2 style="margin-bottom: 20px;">จัดการภาพยนตร์</h2>
-                <div class="card-panel">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                        <div>
-                            <label style="font-size:13px; color:var(--text-muted);">ชื่อภาพยนตร์</label>
-                            <input type="text" id="mov-title">
-                            <label style="font-size:13px; color:var(--text-muted);">หมวดหมู่ (Genre)</label>
-                            <input type="text" id="mov-genre" placeholder="เช่น Action, Sci-Fi">
-                            <label style="font-size:13px; color:var(--text-muted);">ความยาว (นาที)</label>
-                            <input type="number" id="mov-duration">
-                        </div>
-                        <div>
-                            <label style="font-size:13px; color:var(--text-muted);">รูปปกภาพยนตร์</label>
-                            <input type="file" accept="image/*" onchange="compressImage(this, 'mov-cover-base64', 'cover-preview')">
-                            <img id="cover-preview" style="max-height: 120px; margin-bottom: 14px; display: block;">
-                            <input type="hidden" id="mov-cover-base64">
-                        </div>
-                    </div>
-                    <button onclick="addMovie()">บันทึกภาพยนตร์</button>
-                </div>
-                <h3>รายชื่อภาพยนตร์ในระบบ</h3>
-                <div class="card-panel" id="table-movies-container"></div>
-            </div>
-
-            <!-- Showtimes Tab -->
-            <div id="tab-showtimes" class="admin-tab hidden">
-                <h2 style="margin-bottom: 20px;">จัดการรอบฉาย</h2>
-                <div class="card-panel" style="max-width: 600px;">
-                    <label style="font-size:13px; color:var(--text-muted);">เลือกภาพยนตร์</label>
-                    <select id="st-movie"></select>
-                    <label style="font-size:13px; color:var(--text-muted);">วันที่ฉาย</label>
-                    <input type="date" id="st-date">
-                    <label style="font-size:13px; color:var(--text-muted);">เวลาฉาย</label>
-                    <input type="time" id="st-time">
-                    <label style="font-size:13px; color:var(--text-muted);">ราคาเก้าอี้ปกติ (สีน้ำเงิน) - แถว C, D, E</label>
-                    <input type="number" id="st-price-blue" value="120">
-                    <label style="font-size:13px; color:var(--text-muted);">ราคาเก้าอี้พรีเมียม (สีแดง) - แถว A, B</label>
-                    <input type="number" id="st-price-red" value="150">
-                    <button onclick="addShowtime()">เพิ่มรอบฉาย</button>
-                </div>
-                <h3>รายการรอบฉายทั้งหมด</h3>
-                <div class="card-panel" id="table-showtimes-container"></div>
-            </div>
-
-            <!-- Staff Tab -->
-            <div id="tab-staff" class="admin-tab hidden">
-                <h2 style="margin-bottom: 20px;">จัดการบัญชีพนักงาน</h2>
-                <div class="card-panel" style="max-width: 500px;">
-                    <label style="font-size:13px; color:var(--text-muted);">รหัสพนักงาน</label>
-                    <input type="text" id="staff-id">
-                    <label style="font-size:13px; color:var(--text-muted);">ชื่อ-นามสกุล</label>
-                    <input type="text" id="staff-name">
-                    <label style="font-size:13px; color:var(--text-muted);">รหัส PIN</label>
-                    <input type="password" id="staff-pin">
-                    <button onclick="addStaff()">บันทึกพนักงาน</button>
-                </div>
-                <h3>รายชื่อพนักงาน</h3>
-                <div class="card-panel" id="table-staff-container"></div>
-            </div>
-
-            <!-- Reports Tab -->
-            <div id="tab-reports" class="admin-tab hidden">
-                <h2 style="margin-bottom: 20px;">ประวัติการขายตั๋วภาพยนตร์</h2>
-                <div class="card-panel" id="table-bookings-container"></div>
-            </div>
-        </div>
+  <!-- Ticket Print Template Structure (80mm Thermal Paper Format) -->
+  <div id="printable-ticket">
+    <div class="ticket-header">
+      <img id="print-logo" class="ticket-logo" src="">
+      <div id="print-cinema-name" class="ticket-title">MAJOR CINEMA POS</div>
+      <div id="print-header-msg" style="font-size: 10px;">ยินดีต้อนรับสู่โรงภาพยนตร์</div>
+    </div>
+    
+    <div class="ticket-body">
+      <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;" id="print-movie-title">AVENGERS</div>
+      <div class="ticket-row"><span>โรงภาพยนตร์:</span> <strong id="print-hall">CINEMA 1</strong></div>
+      <div class="ticket-row"><span>วันที่:</span> <span id="print-date">01/10/2026</span></div>
+      <div class="ticket-row"><span>รอบเวลา:</span> <strong id="print-time">14:30</strong></div>
+      
+      <div class="ticket-seats" id="print-seats">A1, A2</div>
+      
+      <div class="ticket-row"><span>จำนวน:</span> <span id="print-count">2 ที่นั่ง</span></div>
+      <div class="ticket-row"><span>ราคารวมทั้งสิ้น:</span> <strong id="print-total">320 บาท</strong></div>
+      <div class="ticket-row"><span>ช่องทางชำระ:</span> <span id="print-payment">เงินสด</span></div>
+      <div class="ticket-row"><span>พนักงานขาย:</span> <span id="print-staff">Admin Staff</span></div>
+      <div class="ticket-row"><span>วันที่ทำรายการ:</span> <span id="print-timestamp">-</span></div>
     </div>
 
-    <!-- POS Staff Screen -->
-    <div id="staff-screen" class="hidden">
-        <div class="pos-left">
-            <div class="filter-header">
-                <div style="flex:1;">
-                    <label style="font-size:12px; color:var(--text-muted);">ภาพยนตร์</label>
-                    <select id="pos-movie" onchange="filterShowtimesForPOS()" style="margin-bottom:0;"></select>
-                </div>
-                <div style="flex:1;">
-                    <label style="font-size:12px; color:var(--text-muted);">รอบฉาย</label>
-                    <select id="pos-showtime" style="margin-bottom:0;"></select>
-                </div>
-                <div style="display:flex; align-items:flex-end;">
-                    <button onclick="searchSeats()">
-                        <svg class="icon"><use href="#icon-search"></use></svg> ค้นหาที่นั่ง
-                    </button>
-                </div>
-            </div>
-
-            <!-- Screen Area -->
-            <div class="screen-container" id="cinema-area" style="display:none;">
-                <div class="screen-arch">CINEMA SCREEN</div>
-                <div id="seat-map-container" class="seat-grid"></div>
-                <div style="margin-top: 35px; display: flex; gap: 24px; font-size: 13px;">
-                    <span style="display:flex; align-items:center; gap:6px;"><span style="width:14px; height:14px; background:var(--seat-blue); border-radius:3px;"></span> ที่นั่งปกติ</span>
-                    <span style="display:flex; align-items:center; gap:6px;"><span style="width:14px; height:14px; background:var(--seat-red); border-radius:3px;"></span> ที่นั่งพรีเมียม</span>
-                    <span style="display:flex; align-items:center; gap:6px;"><span style="width:14px; height:14px; background:var(--seat-booked); border-radius:3px;"></span> ขายแล้ว</span>
-                    <span style="display:flex; align-items:center; gap:6px;"><span style="width:14px; height:14px; background:var(--seat-selected); border-radius:3px;"></span> เลือกอยู่</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="pos-right">
-            <!-- Printer Controller -->
-            <div class="printer-status-box">
-                <button id="btn-connect-bt" onclick="connectBluetoothPrinter()" style="width:100%;">
-                    <svg class="icon"><use href="#icon-print"></use></svg> เชื่อมต่อเครื่องพิมพ์ Bluetooth
-                </button>
-                <span id="bt-status" class="status-badge">สถานะ: ยังไม่ได้เชื่อมต่อ</span>
-            </div>
-
-            <h3 style="font-size: 16px; margin-bottom: 12px; color: var(--major-gold);">รายการที่นั่งที่เลือก</h3>
-            <div class="cart-box" id="cart-list"></div>
-            
-            <div class="total-amount">ยอดรวม: <span id="cart-total">0</span> บาท</div>
-
-            <label style="font-size:12px; color:var(--text-muted);">ช่องทางการชำระเงิน</label>
-            <select id="payment-method">
-                <option value="Cash">เงินสด (Cash)</option>
-                <option value="PromptPay">สแกนจ่าย (PromptPay QR)</option>
-                <option value="Credit Card">บัตรเครดิต/เดบิต</option>
-            </select>
-
-            <button class="btn-danger" id="btn-checkout" onclick="processCheckout()" disabled style="width:100%; padding:14px; font-size:16px;">
-                ชำระเงินและพิมพ์ตั๋ว
-            </button>
-        </div>
+    <div class="ticket-footer">
+      <div id="print-footer-msg">ขอบคุณที่ใช้บริการ โปรดเก็บตั๋วไว้เพื่อเข้าชม</div>
+      <div class="barcode-stub">*BK-<span id="print-booking-id">000000</span>*</div>
     </div>
+  </div>
 
-    <!-- ==========================================================
-         JAVASCRIPT CORE ENGINE
-         ========================================================== -->
-    <script>
-        // ใส่ URL Web App ของ Google Apps Script ที่นี่
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylz-ZxtDp8t91c7Iun5makvv6g997u5s3KH7RohJPla6c8GmXZYTTz9XPY8MT_6dTI/exec"; 
+  <!-- JavaScript App Engine Logic -->
+  <script>
+    // System State Variables
+    let apiUrl = localStorage.getItem('cinema_api_url') || '';
+    let systemData = { settings: {}, movies: [], showtimes: [], staff: [], bookings: [] };
+    let currentSelectedShowtime = null;
+    let selectedSeats = [];
+    let bookedSeatsList = [];
 
-        // State Global
-        let gSettings = {};
-        let gMovies = [];
-        let gShowtimes = [];
-        let gBookings = [];
-        let selectedSeats = [];
-        let currentShowtimeData = null;
-        let printCharacteristic = null;
+    // On Load Initializer
+    window.onload = function() {
+      if (apiUrl) {
+        document.getElementById('api-url-input').value = apiUrl;
+        fetchSystemData();
+      } else {
+        Swal.fire({
+          icon: 'info',
+          title: 'ยินดีต้อนรับ',
+          text: 'กรุณากรอก Google Apps Script Web App URL ด้านบนเพื่อเริ่มใช้งานระบบ',
+          confirmButtonColor: '#C8102E'
+        });
+      }
+      // Set default date picker to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('showtime-date').value = today;
+    };
 
-        // UI Helpers
-        function showLoader(text = "กำลังดำเนินการ...") {
-            document.getElementById('loader-text').innerText = text;
-            document.getElementById('loader').classList.remove('hidden');
+    function saveApiUrl() {
+      const url = document.getElementById('api-url-input').value.trim();
+      if (!url) {
+        Swal.fire('ข้อผิดพลาด', 'กรุณากรอก URL', 'error');
+        return;
+      }
+      apiUrl = url;
+      localStorage.setItem('cinema_api_url', apiUrl);
+      Swal.fire('สำเร็จ', 'บันทึกการเชื่อมต่อ URL เรียบร้อย', 'success');
+      fetchSystemData();
+    }
+
+    // Tab Navigation
+    function switchMainTab(tab) {
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      if (tab === 'pos') {
+        event.currentTarget.classList.add('active');
+        document.getElementById('tab-pos').classList.add('active');
+      } else {
+        event.currentTarget.classList.add('active');
+        document.getElementById('tab-admin').classList.add('active');
+      }
+    }
+
+    function switchAdminSubTab(subTab) {
+      document.querySelectorAll('.admin-menu-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.admin-sub-content').forEach(c => c.style.display = 'none');
+      
+      event.currentTarget.classList.add('active');
+      document.getElementById('admin-sub-' + subTab).style.display = 'block';
+    }
+
+    // API Data Fetching
+    async function fetchSystemData() {
+      if (!apiUrl) return;
+      
+      Swal.fire({ title: 'กำลังโหลดข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      
+      try {
+        const response = await fetch(apiUrl + '?action=getAllData');
+        const res = await response.json();
+        Swal.close();
+        
+        if (res.status === 'success') {
+          systemData = res;
+          renderSystemSettings();
+          populatePosDropdowns();
+          renderAdminTables();
+        } else {
+          Swal.fire('ข้อผิดพลาด', res.message || 'ไม่สามารถดึงข้อมูลได้', 'error');
         }
-        function hideLoader() {
-            document.getElementById('loader').classList.add('hidden');
+      } catch (err) {
+        Swal.close();
+        console.error(err);
+        Swal.fire('ข้อผิดพลาด', 'การเชื่อมต่อฐานข้อมูลล้มเหลว ตรวจสอบ URL หรือ CORS', 'error');
+      }
+    }
+
+    // Render Data to UI Components
+    function renderSystemSettings() {
+      const s = systemData.settings || {};
+      if (s.cinema_name) {
+        document.getElementById('app-title').innerText = s.cinema_name;
+        document.getElementById('setting-cinema-name').value = s.cinema_name;
+      }
+      if (s.cinema_logo) {
+        document.getElementById('app-logo').src = s.cinema_logo;
+        document.getElementById('setting-logo-preview').src = s.cinema_logo;
+        document.getElementById('setting-logo-base64').value = s.cinema_logo;
+      }
+      if (s.receipt_header) document.getElementById('setting-receipt-header').value = s.receipt_header;
+      if (s.receipt_footer) document.getElementById('setting-receipt-footer').value = s.receipt_footer;
+    }
+
+    function populatePosDropdowns() {
+      const movieSelect = document.getElementById('pos-movie-select');
+      const adminMovieSelect = document.getElementById('showtime-movie-select');
+      
+      movieSelect.innerHTML = '<option value="">-- กรุณาเลือกหนัง --</option>';
+      adminMovieSelect.innerHTML = '<option value="">-- เลือกหนัง --</option>';
+
+      systemData.movies.forEach(m => {
+        const opt = `<option value="${m.MovieID}">${m.Title}</option>`;
+        movieSelect.innerHTML += opt;
+        adminMovieSelect.innerHTML += opt;
+      });
+    }
+
+    function onPosMovieChange() {
+      const movieId = document.getElementById('pos-movie-select').value;
+      const showtimeSelect = document.getElementById('pos-showtime-select');
+      showtimeSelect.innerHTML = '<option value="">-- กรุณาเลือกรอบฉาย --</option>';
+
+      const filteredShowtimes = systemData.showtimes.filter(s => s.MovieID === movieId);
+      filteredShowtimes.forEach(st => {
+        showtimeSelect.innerHTML += `<option value="${st.ShowtimeID}">${st.Hall} | วันที่ ${st.ShowDate} เวลา ${st.ShowTime}</option>`;
+      });
+    }
+
+    // Load & Render Cinema Seat Matrix
+    async function loadShowtimeSeats() {
+      const showtimeId = document.getElementById('pos-showtime-select').value;
+      if (!showtimeId) {
+        Swal.fire('แจ้งเตือน', 'กรุณาเลือกรอบฉายก่อนทำการค้นหา', 'warning');
+        return;
+      }
+
+      currentSelectedShowtime = systemData.showtimes.find(s => s.ShowtimeID === showtimeId);
+      const currentMovie = systemData.movies.find(m => m.MovieID === currentSelectedShowtime.MovieID);
+
+      // Update Order Summary Left Card
+      document.getElementById('summary-title').innerText = currentMovie ? currentMovie.Title : '-';
+      document.getElementById('summary-hall').innerHTML = `<i class="fa-solid fa-door-open"></i> โรง: ${currentSelectedShowtime.Hall}`;
+      document.getElementById('summary-time').innerHTML = `<i class="fa-regular fa-clock"></i> เวลา: ${currentSelectedShowtime.ShowTime}`;
+      if (currentMovie && currentMovie.CoverBase64) {
+        document.getElementById('summary-poster').src = currentMovie.CoverBase64;
+      }
+
+      // Fetch Booked Seats from Apps Script
+      Swal.fire({ title: 'กำลังโหลดผังที่นั่ง...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'getShowtimeSeats', showtimeId: showtimeId })
+        });
+        const res = await response.json();
+        Swal.close();
+
+        if (res.status === 'success') {
+          bookedSeatsList = res.bookedSeats || [];
+          selectedSeats = [];
+          renderSeatGrid();
+          updateSummaryPanel();
         }
+      } catch (e) {
+        Swal.close();
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลที่นั่งได้', 'error');
+      }
+    }
 
-        // Fetch API Wrapper
-        async function gasApi(action, data = {}) {
-            if(SCRIPT_URL === "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") {
-                alert("กรุณาใส่ SCRIPT_URL ในโค้ด index.html ก่อนใช้งาน");
-                return null;
-            }
-            try {
-                let res = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: action, data: data }),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                });
-                return await res.json();
-            } catch (error) {
-                console.error(error);
-                alert("เชื่อมต่อ Backend ล้มเหลว: " + error.message);
-                return null;
-            }
-        }
+    function renderSeatGrid() {
+      const container = document.getElementById('seat-grid-container');
+      container.innerHTML = '';
 
-        // Compress Image to Base64
-        function compressImage(input, hiddenId, previewId) {
-            if (input.files && input.files[0]) {
-                let reader = new FileReader();
-                reader.onload = function(e) {
-                    let img = new Image();
-                    img.src = e.target.result;
-                    img.onload = function() {
-                        let canvas = document.createElement('canvas');
-                        let MAX_WIDTH = 300;
-                        let scaleSize = MAX_WIDTH / img.width;
-                        canvas.width = MAX_WIDTH;
-                        canvas.height = img.height * scaleSize;
-                        let ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        let dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                        document.getElementById(hiddenId).value = dataUrl;
-                        document.getElementById(previewId).src = dataUrl;
-                    }
-                }
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
+      // Define Matrix Structure: Rows A-B Red (Honeymoon), Rows C-F Blue (Standard)
+      const rowLabels = ['A', 'B', 'C', 'D', 'E', 'F'];
+      const seatsPerRow = 10;
 
-        // Setup & Login
-        async function initDatabase() {
-            showLoader("กำลังติดตั้งโครงสร้างตาราง...");
-            let res = await gasApi("setup");
-            hideLoader();
-            if(res && res.status === "success") alert("สร้างโครงสร้างตารางสำเร็จแล้ว");
-        }
+      rowLabels.forEach(row => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'seat-row';
 
-        async function login(role) {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('main-header').classList.remove('hidden');
-            
-            showLoader("กำลังโหลดระบบ...");
-            let sets = await gasApi("getSettings");
-            if(sets) {
-                gSettings = sets;
-                document.getElementById('sys-name').innerText = sets.ShopName || "MAJOR CINEPLEX SYSTEM";
-                if(sets.ShopLogo) {
-                    document.getElementById('sys-logo').src = sets.ShopLogo;
-                    document.getElementById('sys-logo').style.display = 'inline-block';
-                }
-            }
+        const label = document.createElement('div');
+        label.className = 'row-label';
+        label.innerText = row;
+        rowDiv.appendChild(label);
 
-            if (role === 'admin') {
-                document.getElementById('admin-screen').classList.remove('hidden');
-                document.getElementById('current-user').innerText = "ผู้ดูแลระบบ";
-                loadAdminData();
-            } else {
-                document.getElementById('staff-screen').classList.remove('hidden');
-                document.getElementById('current-user').innerText = "พนักงานจำหน่ายตั๋ว";
-                loadStaffData();
-            }
-            hideLoader();
-        }
+        const isRedSeat = (row === 'A' || row === 'B');
+        const seatColorClass = isRedSeat ? 'red' : 'blue';
 
-        function logout() { window.location.reload(); }
+        for (let i = 1; i <= seatsPerRow; i++) {
+          const seatNo = `${row}${i}`;
+          const seatDiv = document.createElement('div');
+          
+          const isBooked = bookedSeatsList.includes(seatNo);
 
-        // Admin Navigation
-        function showAdminTab(tabId, btn) {
-            document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.sidebar button').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.remove('hidden');
-            btn.classList.add('active');
-        }
+          if (isBooked) {
+            seatDiv.className = `seat disabled`;
+            seatDiv.innerText = 'X';
+          } else {
+            seatDiv.className = `seat ${seatColorClass}`;
+            seatDiv.innerText = seatNo;
+            seatDiv.onclick = () => toggleSeatSelection(seatNo, seatDiv, isRedSeat);
+          }
 
-        async function loadAdminData() {
-            document.getElementById('set-shopname').value = gSettings.ShopName || "";
-            document.getElementById('set-receipt-head').value = gSettings.TicketHeader || "";
-            document.getElementById('set-receipt-foot').value = gSettings.TicketFooter || "";
-            if(gSettings.ShopLogo) {
-                document.getElementById('logo-preview').src = gSettings.ShopLogo;
-                document.getElementById('set-logo-base64').value = gSettings.ShopLogo;
-            }
-
-            gMovies = await gasApi("getMovies") || [];
-            gShowtimes = await gasApi("getShowtimes") || [];
-            let staff = await gasApi("getStaff") || [];
-            let bookings = await gasApi("getBookings") || [];
-
-            renderTable("table-movies-container", gMovies, ["MovieID", "Title", "Duration", "Genre"]);
-            renderTable("table-showtimes-container", gShowtimes, ["Date", "Time", "MovieID", "PriceBlue", "PriceRed"]);
-            renderTable("table-staff-container", staff, ["StaffID", "Name"]);
-            renderTable("table-bookings-container", bookings.reverse(), ["Timestamp", "BookingID", "ShowtimeID", "Seats", "TotalPrice", "PaymentMethod"]);
-
-            let stMovieSelect = document.getElementById('st-movie');
-            stMovieSelect.innerHTML = "";
-            gMovies.forEach(m => {
-                stMovieSelect.innerHTML += `<option value="${m.MovieID}">${m.Title}</option>`;
-            });
-        }
-
-        async function saveSettings() {
-            let data = {
-                ShopName: document.getElementById('set-shopname').value,
-                ShopLogo: document.getElementById('set-logo-base64').value,
-                TicketHeader: document.getElementById('set-receipt-head').value,
-                TicketFooter: document.getElementById('set-receipt-foot').value
-            };
-            showLoader("กำลังบันทึก...");
-            await gasApi("saveSettings", data);
-            alert("บันทึกการตั้งค่าเรียบร้อย");
-            hideLoader();
-            login('admin');
-        }
-
-        async function addMovie() {
-            let data = {
-                MovieID: "M" + new Date().getTime(),
-                Title: document.getElementById('mov-title').value,
-                Genre: document.getElementById('mov-genre').value,
-                Duration: document.getElementById('mov-duration').value,
-                CoverBase64: document.getElementById('mov-cover-base64').value
-            };
-            if(!data.Title) return alert("กรุณาใส่ชื่อภาพยนตร์");
-            showLoader();
-            await gasApi("addMovie", data);
-            alert("เพิ่มสำเร็จ");
-            hideLoader();
-            loadAdminData();
-        }
-
-        async function addShowtime() {
-            let data = {
-                ShowtimeID: "ST" + new Date().getTime(),
-                MovieID: document.getElementById('st-movie').value,
-                Date: document.getElementById('st-date').value,
-                Time: document.getElementById('st-time').value,
-                PriceBlue: document.getElementById('st-price-blue').value,
-                PriceRed: document.getElementById('st-price-red').value
-            };
-            if(!data.Date || !data.Time) return alert("กรุณาระบุวันเวลา");
-            showLoader();
-            await gasApi("addShowtime", data);
-            alert("เพิ่มรอบฉายสำเร็จ");
-            hideLoader();
-            loadAdminData();
-        }
-
-        async function addStaff() {
-            let data = {
-                StaffID: document.getElementById('staff-id').value,
-                Name: document.getElementById('staff-name').value,
-                Role: "Staff",
-                PIN: document.getElementById('staff-pin').value
-            };
-            showLoader();
-            await gasApi("addStaff", data);
-            alert("บันทึกข้อมูลพนักงานแล้ว");
-            hideLoader();
-            loadAdminData();
-        }
-
-        function renderTable(containerId, dataArray, columnsToShow) {
-            let container = document.getElementById(containerId);
-            if (!dataArray || dataArray.length === 0) {
-                container.innerHTML = "<p style='color:var(--text-muted);'>ไม่มีข้อมูล</p>";
-                return;
-            }
-            let html = `<table><tr>`;
-            columnsToShow.forEach(col => html += `<th>${col}</th>`);
-            html += `</tr>`;
-            dataArray.forEach(row => {
-                html += `<tr>`;
-                columnsToShow.forEach(col => html += `<td>${row[col] || "-"}</td>`);
-                html += `</tr>`;
-            });
-            html += `</table>`;
-            container.innerHTML = html;
+          rowDiv.appendChild(seatDiv);
         }
 
-        // POS Functions
-        async function loadStaffData() {
-            gMovies = await gasApi("getMovies") || [];
-            gShowtimes = await gasApi("getShowtimes") || [];
-            
-            let posMovie = document.getElementById('pos-movie');
-            posMovie.innerHTML = `<option value="">-- เลือกภาพยนตร์ --</option>`;
-            gMovies.forEach(m => {
-                posMovie.innerHTML += `<option value="${m.MovieID}">${m.Title}</option>`;
-            });
-        }
+        const labelRight = document.createElement('div');
+        labelRight.className = 'row-label';
+        labelRight.innerText = row;
+        rowDiv.appendChild(labelRight);
 
-        function filterShowtimesForPOS() {
-            let selMovie = document.getElementById('pos-movie').value;
-            let posST = document.getElementById('pos-showtime');
-            posST.innerHTML = `<option value="">-- เลือกรอบฉาย --</option>`;
-            gShowtimes.filter(s => s.MovieID == selMovie).forEach(s => {
-                posST.innerHTML += `<option value="${s.ShowtimeID}">${s.Date} | เวลา ${s.Time}</option>`;
-            });
-            document.getElementById('cinema-area').style.display = 'none';
-        }
+        container.appendChild(rowDiv);
+      });
+    }
 
-        async function searchSeats() {
-            let stId = document.getElementById('pos-showtime').value;
-            if(!stId) return alert("กรุณาเลือกรอบฉายก่อน");
+    function toggleSeatSelection(seatNo, seatElement, isRedSeat) {
+      const index = selectedSeats.findIndex(s => s.seatNo === seatNo);
+      
+      if (index > -1) {
+        selectedSeats.splice(index, 1);
+        seatElement.classList.remove('selected');
+      } else {
+        const price = isRedSeat ? Number(currentSelectedShowtime.RedPrice) : Number(currentSelectedShowtime.BluePrice);
+        selectedSeats.push({ seatNo: seatNo, price: price });
+        seatElement.classList.add('selected');
+      }
 
-            currentShowtimeData = gShowtimes.find(s => s.ShowtimeID === stId);
-            selectedSeats = [];
-            updateCartUI();
+      updateSummaryPanel();
+    }
 
-            showLoader("กำลังผังที่นั่ง...");
-            gBookings = await gasApi("getBookings") || [];
-            
-            let bookedSeatsArray = [];
-            gBookings.filter(b => b.ShowtimeID === stId).forEach(b => {
-                if(b.Seats) {
-                    let arr = b.Seats.split(",");
-                    bookedSeatsArray = bookedSeatsArray.concat(arr);
-                }
-            });
+    function updateSummaryPanel() {
+      const container = document.getElementById('selected-seats-container');
+      const countSpan = document.getElementById('summary-seat-count');
+      const totalSpan = document.getElementById('summary-total-price');
 
-            buildSeatMap(bookedSeatsArray);
-            document.getElementById('cinema-area').style.display = 'flex';
-            hideLoader();
-        }
+      if (selectedSeats.length === 0) {
+        container.innerHTML = '<span style="color: #666; font-size: 0.85rem;">ยังไม่ได้เลือกที่นั่ง</span>';
+        countSpan.innerText = '0 ที่นั่ง';
+        totalSpan.innerText = '0 ฿';
+        return;
+      }
 
-        function buildSeatMap(bookedSeats) {
-            let container = document.getElementById('seat-map-container');
-            container.innerHTML = "";
-            let rows = ['A', 'B', 'C', 'D', 'E'];
-            let cols = 10;
+      container.innerHTML = '';
+      let totalPrice = 0;
 
-            rows.forEach(r => {
-                let rowDiv = document.createElement('div');
-                rowDiv.className = 'seat-row';
-                rowDiv.innerHTML = `<div class="row-name">${r}</div>`;
-                
-                let isRed = (r === 'A' || r === 'B');
-                let price = isRed ? currentShowtimeData.PriceRed : currentShowtimeData.PriceBlue;
-                let colorClass = isRed ? 'red' : 'blue';
+      selectedSeats.forEach(s => {
+        totalPrice += s.price;
+        const tag = document.createElement('span');
+        tag.className = 'seat-tag';
+        tag.innerHTML = `<i class="fa-solid fa-chair"></i> ${s.seatNo} (${s.price}฿)`;
+        container.appendChild(tag);
+      });
 
-                for (let i = 1; i <= cols; i++) {
-                    let seatId = `${r}${i}`;
-                    let seatDiv = document.createElement('div');
-                    seatDiv.innerText = i;
-                    
-                    if (bookedSeats.includes(seatId)) {
-                        seatDiv.className = `seat-box booked`;
-                    } else {
-                        seatDiv.className = `seat-box ${colorClass}`;
-                        seatDiv.onclick = () => toggleSeat(seatDiv, seatId, price);
-                    }
-                    rowDiv.appendChild(seatDiv);
-                }
-                container.appendChild(rowDiv);
-            });
-        }
+      countSpan.innerText = `${selectedSeats.length} ที่นั่ง`;
+      totalSpan.innerText = `${totalPrice.toLocaleString()} ฿`;
+    }
 
-        function toggleSeat(element, seatId, price) {
-            let index = selectedSeats.findIndex(s => s.id === seatId);
-            if (index > -1) {
-                selectedSeats.splice(index, 1);
-                element.classList.remove('selected');
-            } else {
-                selectedSeats.push({ id: seatId, price: parseInt(price) });
-                element.classList.add('selected');
-            }
-            updateCartUI();
-        }
+    // Payment Processing & Automatic Printing
+    async function processPayment() {
+      if (!currentSelectedShowtime || selectedSeats.length === 0) {
+        Swal.fire('แจ้งเตือน', 'กรุณาเลือกที่นั่งอย่างน้อย 1 ที่นั่งก่อนชำระเงิน', 'warning');
+        return;
+      }
 
-        function updateCartUI() {
-            let cartList = document.getElementById('cart-list');
-            cartList.innerHTML = "";
-            let total = 0;
-            
-            if(selectedSeats.length === 0) {
-                cartList.innerHTML = "<p style='color:var(--text-muted); text-align:center; padding-top:20px;'>ยังไม่ได้เลือกที่นั่ง</p>";
-                document.getElementById('btn-checkout').disabled = true;
-            } else {
-                document.getElementById('btn-checkout').disabled = false;
-                selectedSeats.forEach(s => {
-                    total += s.price;
-                    cartList.innerHTML += `
-                        <div class="cart-row">
-                            <span>ที่นั่ง ${s.id}</span>
-                            <span>${s.price} ฿</span>
-                        </div>
-                    `;
-                });
-            }
-            document.getElementById('cart-total').innerText = total.toLocaleString();
-        }
+      const totalAmount = selectedSeats.reduce((sum, item) => sum + item.price, 0);
 
-        // ==========================================================
-        // BLUETOOTH PRINTER ENGINE (BITMAP RASTER PRINTING - SOLVES CHINESE TEXT BUG)
-        // ==========================================================
-        async function connectBluetoothPrinter() {
-            try {
-                if (!navigator.bluetooth) {
-                    alert("เบราว์เซอร์ไม่รองรับ Web Bluetooth (แนะนำใช้งานผ่าน Google Chrome)");
-                    return;
-                }
-                const device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
-                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', 'e7810a71-73ae-499d-8c15-faa9aef0c3f2']
-                });
-                const server = await device.gatt.connect();
-                let services = await server.getPrimaryServices();
-                let service = services[0];
-                let characteristics = await service.getCharacteristics();
-                printCharacteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
-                
-                document.getElementById('bt-status').innerText = "เชื่อมต่อสำเร็จ: " + device.name;
-                document.getElementById('bt-status').style.color = "#43a047";
-            } catch (error) {
-                console.error("Bluetooth Error:", error);
-                alert("การเชื่อมต่อเครื่องพิมพ์บลูทูธล้มเหลว: " + error.message);
-            }
-        }
+      const { value: paymentMethod } = await Swal.fire({
+        title: 'เลือกวิธีการชำระเงิน',
+        text: `ยอดชำระรวมทั้งสิ้น: ${totalAmount.toLocaleString()} บาท`,
+        icon: 'question',
+        input: 'select',
+        inputOptions: {
+          'เงินสด (Cash)': 'เงินสด (Cash)',
+          'สแกน QR PromptPay': 'สแกน QR PromptPay',
+          'บัตรเครดิต/เดบิต': 'บัตรเครดิต/เดบิต'
+        },
+        inputPlaceholder: 'เลือกวิธีชำระเงิน',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยันการชำระเงิน',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#4CAF50'
+      });
 
-        // แปลง Canvas รูปภาพไปเป็นคำสั่ง ESC/POS Raster Image (GS v 0) สำหรับพิมพ์ภาพขาวดำ
-        function canvasToEscPosRaster(canvas) {
-            const ctx = canvas.getContext('2d');
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const width = canvas.width;
-            const height = canvas.height;
-            const widthBytes = Math.ceil(width / 8);
+      if (paymentMethod) {
+        Swal.fire({ title: 'กำลังบันทึกการชำระเงิน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            const xL = widthBytes & 0xFF;
-            const xH = (widthBytes >> 8) & 0xFF;
-            const yL = height & 0xFF;
-            const yH = (height >> 8) & 0xFF;
+        const seatListArray = selectedSeats.map(s => s.seatNo);
+        const bookingPayload = {
+          action: 'createBooking',
+          data: {
+            showtimeId: currentSelectedShowtime.ShowtimeID,
+            seats: seatListArray,
+            totalPrice: totalAmount,
+            paymentMethod: paymentMethod,
+            staffName: 'Admin POS'
+          }
+        };
 
-            const header = new Uint8Array([0x1D, 0x76, 0x30, 0, xL, xH, yL, yH]);
-            const imageBytes = new Uint8Array(widthBytes * height);
+        try {
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            body: JSON.stringify(bookingPayload)
+          });
+          const res = await response.json();
+          Swal.close();
 
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    const idx = (y * width + x) * 4;
-                    const r = imgData.data[idx];
-                    const g = imgData.data[idx + 1];
-                    const b = imgData.data[idx + 2];
-                    const a = imgData.data[idx + 3];
-
-                    const brightness = (a < 128) ? 255 : (0.299 * r + 0.587 * g + 0.114 * b);
-
-                    if (brightness < 128) {
-                        const byteIdx = y * widthBytes + Math.floor(x / 8);
-                        const bitIdx = 7 - (x % 8);
-                        imageBytes[byteIdx] |= (1 << bitIdx);
-                    }
-                }
-            }
-
-            const init = new Uint8Array([0x1B, 0x40]); // Reset Printer
-            const alignCenter = new Uint8Array([0x1B, 0x61, 1]); // Center Align
-            const feedLines = new Uint8Array([0x1B, 0x64, 4]); // Feed 4 lines
-            const cutPaper = new Uint8Array([0x1D, 0x56, 0x41, 0]); // Full Cut Command
-
-            const totalLen = init.length + alignCenter.length + header.length + imageBytes.length + feedLines.length + cutPaper.length;
-            const combined = new Uint8Array(totalLen);
-
-            let offset = 0;
-            combined.set(init, offset); offset += init.length;
-            combined.set(alignCenter, offset); offset += alignCenter.length;
-            combined.set(header, offset); offset += header.length;
-            combined.set(imageBytes, offset); offset += imageBytes.length;
-            combined.set(feedLines, offset); offset += feedLines.length;
-            combined.set(cutPaper, offset); offset += cutPaper.length;
-
-            return combined;
-        }
-
-        async function processCheckout() {
-            if(selectedSeats.length === 0) return;
-            let total = selectedSeats.reduce((sum, s) => sum + s.price, 0);
-            let seatsStr = selectedSeats.map(s => s.id).join(",");
-            let payMethod = document.getElementById('payment-method').value;
-
-            let data = {
-                ShowtimeID: currentShowtimeData.ShowtimeID,
-                Seats: seatsStr,
-                TotalPrice: total,
-                PaymentMethod: payMethod,
-                StaffName: "Staff POS"
-            };
-
-            showLoader("กำลังบันทึกการจอง และสร้างใบเสร็จ...");
-            let res = await gasApi("bookTicket", data);
-
-            if(res && res.status === "success") {
-                // อัปเดตสีเก้าอี้
-                document.querySelectorAll('.seat-box.selected').forEach(el => {
-                    el.classList.remove('selected', 'blue', 'red');
-                    el.classList.add('booked');
-                    el.onclick = null;
-                });
-
-                // สร้าง บาร์โค้ด & คิวอาร์โค้ด และพิมพ์
-                await renderAndPrintReceipt(res.bookingDetails);
-                
-                selectedSeats = [];
-                updateCartUI();
-            }
-            hideLoader();
-        }
-
-        async function renderAndPrintReceipt(bookingDetails) {
-            let movie = gMovies.find(m => m.MovieID === currentShowtimeData.MovieID);
-
-            // 1. เติมข้อมูลลงใน DOM Receipt
-            document.getElementById('rc-txt-shopname').innerText = gSettings.ShopName || "MY CINEMA";
-            document.getElementById('rc-txt-head').innerText = gSettings.TicketHeader || "ยินดีต้อนรับสู่โรงภาพยนตร์";
-            document.getElementById('rc-txt-foot').innerText = gSettings.TicketFooter || "ซื้อแล้วไม่รับคืนเงินทุกกรณี";
-            if(gSettings.ShopLogo) {
-                document.getElementById('rc-img-logo').src = gSettings.ShopLogo;
-                document.getElementById('rc-img-logo').style.display = 'inline-block';
-            }
-
-            document.getElementById('rc-txt-movie').innerText = movie.Title;
-            document.getElementById('rc-txt-date').innerText = currentShowtimeData.Date;
-            document.getElementById('rc-txt-time').innerText = currentShowtimeData.Time;
-            document.getElementById('rc-txt-seats').innerText = bookingDetails.Seats;
-            document.getElementById('rc-txt-payment').innerText = bookingDetails.PaymentMethod;
-            document.getElementById('rc-txt-total').innerText = bookingDetails.TotalPrice + " บาท";
-            document.getElementById('rc-txt-ref').innerText = "Ref: " + bookingDetails.BookingID;
-            document.getElementById('rc-txt-timestamp').innerText = bookingDetails.Timestamp;
-
-            // 2. สร้าง Barcode (รหัสใบเสร็จ CODE128)
-            JsBarcode("#rc-svg-barcode", bookingDetails.BookingID, {
-                format: "CODE128",
-                width: 2,
-                height: 50,
-                displayValue: false
+          if (res.status === 'success') {
+            Swal.fire({
+              icon: 'success',
+              title: 'ชำระเงินสำเร็จ!',
+              text: 'กำลังพิมพ์ตั๋วภาพยนตร์ผ่านเครื่องพิมพ์ใบเสร็จ...',
+              timer: 2000,
+              showConfirmButton: false
             });
 
-            // 3. สร้าง QR Code (ข้อมูลตรวจตั๋วเข้าโรงภาพยนตร์)
-            let qrPayload = JSON.stringify({
-                ref: bookingDetails.BookingID,
-                movie: movie.Title,
-                seats: bookingDetails.Seats,
-                time: currentShowtimeData.Time
-            });
-            await QRCode.toCanvas(document.getElementById('rc-cvs-qrcode'), qrPayload, { width: 140, margin: 1 });
+            // Trigger Automatic Ticket Printing
+            triggerThermalPrint(res.bookingId, res.timestamp, paymentMethod, totalAmount);
 
-            // 4. แปลง HTML DOM ให้กลายเป็น Canvas ภาพ
-            const receiptZone = document.getElementById('receipt-render-zone');
-            const canvas = await html2canvas(receiptZone, { scale: 1 });
-
-            // 5. สั่งพิมพ์ออกเครื่อง Bluetooth (หรือเปิดพรินเตอร์ของเบราว์เซอร์หากไม่มีบลูทูธ)
-            if (printCharacteristic) {
-                try {
-                    let escPosData = canvasToEscPosRaster(canvas);
-                    let chunkSize = 200; // ส่งทีละ Chunk เพื่อป้องกัน Buffer ล้น
-                    for (let i = 0; i < escPosData.length; i += chunkSize) {
-                        let chunk = escPosData.slice(i, i + chunkSize);
-                        await printCharacteristic.writeValue(chunk);
-                    }
-                } catch (e) {
-                    console.error("Bluetooth Print Failed", e);
-                    alert("การพิมพ์ผ่านบลูทูธขัดข้อง: " + e.message);
-                }
-            } else {
-                alert("ไม่ได้เชื่อมต่อบลูทูธ ระบบจะเปิดหน้าต่างสั่งพิมพ์ของระบบ");
-                window.print();
-            }
+            // Refresh seats map
+            loadShowtimeSeats();
+          } else {
+            Swal.fire('ข้อผิดพลาด', res.message, 'error');
+          }
+        } catch (err) {
+          Swal.close();
+          Swal.fire('ข้อผิดพลาด', 'บันทึกรายการไม่สำเร็จ', 'error');
         }
-    </script>
+      }
+    }
+
+    function triggerThermalPrint(bookingId, timestamp, paymentMethod, totalAmount) {
+      const s = systemData.settings || {};
+      const currentMovie = systemData.movies.find(m => m.MovieID === currentSelectedShowtime.MovieID);
+
+      document.getElementById('print-logo').src = s.cinema_logo || '';
+      document.getElementById('print-cinema-name').innerText = s.cinema_name || 'MAJOR CINEMA POS';
+      document.getElementById('print-header-msg').innerText = s.receipt_header || 'ยินดีต้อนรับสู่โรงภาพยนตร์';
+      document.getElementById('print-footer-msg').innerText = s.receipt_footer || 'ขอบคุณที่ใช้บริการ';
+
+      document.getElementById('print-movie-title').innerText = currentMovie ? currentMovie.Title : 'MOVIE';
+      document.getElementById('print-hall').innerText = currentSelectedShowtime.Hall;
+      document.getElementById('print-date').innerText = currentSelectedShowtime.ShowDate;
+      document.getElementById('print-time').innerText = currentSelectedShowtime.ShowTime;
+      
+      const seatsStr = selectedSeats.map(s => s.seatNo).join(', ');
+      document.getElementById('print-seats').innerText = seatsStr;
+      document.getElementById('print-count').innerText = `${selectedSeats.length} ที่นั่ง`;
+      document.getElementById('print-total').innerText = `${totalAmount.toLocaleString()} บาท`;
+      document.getElementById('print-payment').innerText = paymentMethod;
+      document.getElementById('print-staff').innerText = 'POS Staff';
+      document.getElementById('print-timestamp').innerText = timestamp;
+      document.getElementById('print-booking-id').innerText = bookingId;
+
+      // Exec Window Print
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    }
+
+    // Helper Convert File to Base64
+    function convertLogoToBase64() {
+      const file = document.getElementById('setting-logo-file').files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          document.getElementById('setting-logo-base64').value = reader.result;
+          document.getElementById('setting-logo-preview').src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function convertMovieCoverToBase64() {
+      const file = document.getElementById('movie-cover-file').files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          document.getElementById('movie-cover-base64').value = reader.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // Admin Action Handlers
+    async function saveSystemSettings(e) {
+      e.preventDefault();
+      const payload = {
+        action: 'saveSettings',
+        data: {
+          cinema_name: document.getElementById('setting-cinema-name').value,
+          cinema_logo: document.getElementById('setting-logo-base64').value,
+          receipt_header: document.getElementById('setting-receipt-header').value,
+          receipt_footer: document.getElementById('setting-receipt-footer').value
+        }
+      };
+
+      sendAdminData(payload, 'บันทึกการตั้งค่าเรียบร้อยแล้ว');
+    }
+
+    async function saveNewMovie(e) {
+      e.preventDefault();
+      const payload = {
+        action: 'addMovie',
+        data: {
+          title: document.getElementById('movie-title').value,
+          duration: document.getElementById('movie-duration').value,
+          genre: document.getElementById('movie-genre').value,
+          coverBase64: document.getElementById('movie-cover-base64').value,
+          description: document.getElementById('movie-description').value
+        }
+      };
+
+      sendAdminData(payload, 'เพิ่มภาพยนตร์สำเร็จ', () => {
+        document.getElementById('form-add-movie').reset();
+      });
+    }
+
+    async function saveNewShowtime(e) {
+      e.preventDefault();
+      const movieSelect = document.getElementById('showtime-movie-select');
+      const movieTitle = movieSelect.options[movieSelect.selectedIndex].text;
+
+      const payload = {
+        action: 'addShowtime',
+        data: {
+          movieId: movieSelect.value,
+          movieTitle: movieTitle,
+          hall: document.getElementById('showtime-hall-select').value,
+          showDate: document.getElementById('showtime-date').value,
+          showTime: document.getElementById('showtime-time').value,
+          bluePrice: document.getElementById('showtime-blue-price').value,
+          redPrice: document.getElementById('showtime-red-price').value
+        }
+      };
+
+      sendAdminData(payload, 'เพิ่มรอบฉายสำเร็จ');
+    }
+
+    async function saveNewStaff(e) {
+      e.preventDefault();
+      const payload = {
+        action: 'addStaff',
+        data: {
+          name: document.getElementById('staff-name').value,
+          role: document.getElementById('staff-role').value,
+          pinCode: document.getElementById('staff-pin').value
+        }
+      };
+
+      sendAdminData(payload, 'เพิ่มข้อมูลพนักงานสำเร็จ', () => {
+        document.getElementById('form-add-staff').reset();
+      });
+    }
+
+    async function sendAdminData(payload, successMsg, callback) {
+      if (!apiUrl) {
+        Swal.fire('ข้อผิดพลาด', 'กรุณาตั้งค่า Web App URL ก่อนใช้งาน', 'error');
+        return;
+      }
+
+      Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        const res = await response.json();
+        Swal.close();
+
+        if (res.status === 'success') {
+          Swal.fire('สำเร็จ', successMsg, 'success');
+          if (callback) callback();
+          fetchSystemData();
+        } else {
+          Swal.fire('ข้อผิดพลาด', res.message, 'error');
+        }
+      } catch (err) {
+        Swal.close();
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถส่งข้อมูลไปยังฐานข้อมูลได้', 'error');
+      }
+    }
+
+    function renderAdminTables() {
+      // Movies Table
+      const movieTbody = document.getElementById('table-movies-body');
+      movieTbody.innerHTML = '';
+      if (systemData.movies.length === 0) {
+        movieTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">ยังไม่มีข้อมูลภาพยนตร์</td></tr>';
+      } else {
+        systemData.movies.forEach(m => {
+          const img = m.CoverBase64 ? `<img src="${m.CoverBase64}" class="table-poster">` : '-';
+          movieTbody.innerHTML += `
+            <tr>
+              <td>${img}</td>
+              <td><strong>${m.Title}</strong></td>
+              <td>${m.Duration} นาที</td>
+              <td>${m.Genre || '-'}</td>
+              <td>${m.CreatedAt || '-'}</td>
+            </tr>
+          `;
+        });
+      }
+
+      // Showtimes Table
+      const showtimeTbody = document.getElementById('table-showtimes-body');
+      showtimeTbody.innerHTML = '';
+      if (systemData.showtimes.length === 0) {
+        showtimeTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">ยังไม่มีรอบฉาย</td></tr>';
+      } else {
+        systemData.showtimes.forEach(s => {
+          showtimeTbody.innerHTML += `
+            <tr>
+              <td><strong>${s.MovieTitle}</strong></td>
+              <td>${s.Hall}</td>
+              <td>${s.ShowDate}</td>
+              <td>${s.ShowTime} น.</td>
+              <td>ฟ้า ${s.BluePrice}฿ / แดง ${s.RedPrice}฿</td>
+            </tr>
+          `;
+        });
+      }
+
+      // Staff Table
+      const staffTbody = document.getElementById('table-staff-body');
+      staffTbody.innerHTML = '';
+      if (systemData.staff.length === 0) {
+        staffTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่มีพนักงาน</td></tr>';
+      } else {
+        systemData.staff.forEach(st => {
+          staffTbody.innerHTML += `
+            <tr>
+              <td>${st.StaffID}</td>
+              <td><strong>${st.Name}</strong></td>
+              <td>${st.Role}</td>
+              <td><span style="color: #4CAF50;">${st.Status}</span></td>
+            </tr>
+          `;
+        });
+      }
+
+      // Reports Table
+      const reportTbody = document.getElementById('table-reports-body');
+      reportTbody.innerHTML = '';
+      if (!systemData.bookings || systemData.bookings.length === 0) {
+        reportTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">ยังไม่มีรายการสั่งซื้อตั๋ว</td></tr>';
+      } else {
+        systemData.bookings.forEach(b => {
+          reportTbody.innerHTML += `
+            <tr>
+              <td><strong>${b.BookingID}</strong></td>
+              <td>${b.Seats}</td>
+              <td><strong style="color: var(--gold);">${Number(b.TotalPrice).toLocaleString()} ฿</strong></td>
+              <td>${b.PaymentMethod}</td>
+              <td>${b.StaffName}</td>
+              <td>${b.Timestamp}</td>
+            </tr>
+          `;
+        });
+      }
+    }
+  </script>
 </body>
 </html>
