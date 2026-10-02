@@ -10,9 +10,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- JsBarcode & QRCode -->
+    <!-- JsBarcode & QRCode & html2canvas -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap');
@@ -59,43 +60,35 @@
             border: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* Print Style for 80mm Thermal Printer - แก้ไขใหม่ให้ทำงานสมบูรณ์ */
+        /* สำหรับซ่อนใบเสร็จไว้เรนเดอร์ภาพเข้า Bluetooth */
+        #offscreen-printer {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+        }
+
+        /* จัด Layout ให้พอดีกับหน้ากว้าง 576 dots ของเครื่องพิมพ์ 80mm */
+        #ticket-print-area {
+            width: 576px; 
+            background: white;
+            color: black;
+            font-family: 'Prompt', sans-serif;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* กรณีไม่มี Bluetooth (Fallback) */
         @media print {
-            @page {
-                margin: 0; /* ลบขอบกระดาษของเบราว์เซอร์ */
-                size: 80mm auto; /* ล็อกขนาดกระดาษ 80mm */
-            }
-            body {
-                background-color: white;
-                margin: 0;
-                padding: 0;
-            }
-            /* ซ่อน UI ทุกอย่างที่ไม่ใช่ตั๋ว */
-            body > *:not(#ticket-print-area) {
-                display: none !important;
+            @page { margin: 0; size: 80mm auto; }
+            body > *:not(#offscreen-printer) { display: none !important; }
+            #offscreen-printer {
+                position: relative;
+                top: 0; left: 0;
+                display: block !important;
             }
             #ticket-print-area {
-                display: block !important;
-                visibility: visible;
-                position: relative;
                 width: 80mm;
-                padding: 5mm; /* ระยะขอบด้านใน */
-                background: white;
-                color: black !important;
-                font-family: 'Prompt', sans-serif;
-                box-sizing: border-box;
-            }
-            #ticket-print-area * {
-                color: black !important;
-                visibility: visible;
-            }
-            /* ซ่อนส่วนที่เกินหรือตั้งค่าให้รูปภาพไม่ล้นขอบ */
-            #ticket-print-area img, #ticket-print-area svg {
-                max-width: 100%;
-                height: auto;
-                display: block;
-                margin-left: auto;
-                margin-right: auto;
+                padding: 5mm;
             }
         }
     </style>
@@ -256,8 +249,11 @@
             </div>
             
             <div class="flex items-center space-x-4">
-                <!-- นำปุ่ม Bluetooth ออก เพราะการใช้ window.print() จะสั่งงานผ่านไดรเวอร์ของเครื่องได้ดีกว่าและตัดกระดาษเอง -->
-                <div class="text-sm text-green-500 font-bold"><i class="fa-solid fa-print"></i> ระบบพร้อมพิมพ์</div>
+                <!-- เมนู Bluetooth ที่คุณต้องการ กลับมาแล้วครับ -->
+                <button onclick="connectBluetoothPrinter()" class="flex items-center text-gray-400 hover:text-white transition bg-gray-800 px-3 py-1 rounded" title="เชื่อมต่อเครื่องพิมพ์ Bluetooth">
+                    <i class="fa-brands fa-bluetooth text-xl mr-2"></i> 
+                    <span id="bt-status" class="text-sm font-bold text-red-500">ไม่ได้เชื่อมต่อ</span>
+                </button>
                 <div class="border-l border-gray-700 h-8 mx-2"></div>
                 <button onclick="logout()" class="text-red-500 hover:text-red-400 font-bold"><i class="fa-solid fa-power-off"></i> ออกระบบ</button>
             </div>
@@ -315,51 +311,56 @@
         </div>
     </div>
 
-    <!-- Hidden Ticket for Printing (80mm) -->
-    <div id="ticket-print-area" class="hidden">
-        <div style="text-align: center; margin-bottom: 10px;">
-            <img id="print-logo" src="" style="width: 80px; margin: 0 auto; display: none; filter: grayscale(100%);">
-        </div>
-        <h2 id="print-shopname" style="text-align: center; font-weight: bold; font-size: 20px; margin: 0 0 5px 0;">CINEMA</h2>
-        <p style="text-align: center; font-size: 12px; margin: 0 0 10px 0; padding-bottom: 10px; border-bottom: 1px dashed #000;">ใบเสร็จรับเงิน / ตั๋วชมภาพยนตร์</p>
-        
-        <div style="font-size: 14px; margin-bottom: 15px; line-height: 1.5;">
-            <div style="display: flex; justify-content: space-between;">
-                <span>วันที่:</span>
-                <span id="print-date"></span>
+    <!-- 
+        Hidden Ticket for Direct Bluetooth Image Printing 
+        ออกแบบหน้ากว้างให้เป็น 576px เพื่อให้พอดีกับ 80mm Printer แบบเป๊ะๆ
+    -->
+    <div id="offscreen-printer">
+        <div id="ticket-print-area">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img id="print-logo" src="" style="width: 150px; margin: 0 auto; display: none; filter: grayscale(100%);">
             </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-                <span>ภาพยนตร์:</span>
-                <span id="print-movie" style="font-weight: bold;"></span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-                <span>รอบฉาย:</span>
-                <span id="print-time"></span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-                <span>ที่นั่ง:</span>
-                <span id="print-seats" style="font-weight: bold;"></span>
-            </div>
-        </div>
-        
-        <div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 10px 0; margin-bottom: 15px; text-align: right;">
-            <div style="font-size: 18px; font-weight: bold;">ยอดรวม: <span id="print-total"></span> บาท</div>
-            <div style="font-size: 12px; margin-top: 5px;">ชำระโดย: <span id="print-paymethod"></span></div>
-        </div>
-        
-        <div style="text-align: center; margin-top: 15px;">
-            <p style="font-size: 12px; margin: 0 0 5px 0;">รหัสใบเสร็จ</p>
-            <div style="display: flex; justify-content: center;">
-                <svg id="barcode"></svg>
-            </div>
-            <p id="print-receipt-id" style="font-size: 10px; margin: 5px 0 15px 0;"></p>
+            <h2 id="print-shopname" style="text-align: center; font-weight: bold; font-size: 40px; margin: 0 0 10px 0;">CINEMA</h2>
+            <p style="text-align: center; font-size: 24px; margin: 0 0 20px 0; padding-bottom: 15px; border-bottom: 2px dashed #000;">ใบเสร็จรับเงิน / ตั๋วชมภาพยนตร์</p>
             
-            <p style="font-size: 12px; margin: 0 0 5px 0;">สแกนเพื่อเข้าชม (Ticket ID)</p>
-            <div id="qrcode" style="display: flex; justify-content: center; margin-top: 5px;"></div>
-            <p id="print-ticket-id" style="font-size: 10px; margin: 5px 0 0 0;"></p>
+            <div style="font-size: 26px; margin-bottom: 30px; line-height: 1.6;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>วันที่:</span>
+                    <span id="print-date"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                    <span>ภาพยนตร์:</span>
+                    <span id="print-movie" style="font-weight: bold;"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                    <span>รอบฉาย:</span>
+                    <span id="print-time"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                    <span>ที่นั่ง:</span>
+                    <span id="print-seats" style="font-weight: bold;"></span>
+                </div>
+            </div>
+            
+            <div style="border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 20px 0; margin-bottom: 30px; text-align: right;">
+                <div style="font-size: 32px; font-weight: bold;">ยอดรวม: <span id="print-total"></span> บาท</div>
+                <div style="font-size: 24px; margin-top: 10px;">ชำระโดย: <span id="print-paymethod"></span></div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <p style="font-size: 22px; margin: 0 0 10px 0;">รหัสใบเสร็จ</p>
+                <div style="display: flex; justify-content: center;">
+                    <svg id="barcode"></svg>
+                </div>
+                <p id="print-receipt-id" style="font-size: 20px; margin: 10px 0 30px 0;"></p>
+                
+                <p style="font-size: 22px; margin: 0 0 10px 0;">สแกนเพื่อเข้าชม (Ticket ID)</p>
+                <div id="qrcode" style="display: flex; justify-content: center; margin-top: 10px;"></div>
+                <p id="print-ticket-id" style="font-size: 20px; margin: 10px 0 0 0;"></p>
+            </div>
+            
+            <p style="text-align: center; font-size: 24px; margin-top: 40px; margin-bottom: 20px;">ขอให้สนุกกับการชมภาพยนตร์<br>Thank you</p>
         </div>
-        
-        <p style="text-align: center; font-size: 12px; margin-top: 25px;">ขอให้สนุกกับการชมภาพยนตร์<br>Thank you</p>
     </div>
 
     <!-- MAIN JAVASCRIPT -->
@@ -375,6 +376,10 @@
         };
         let currentShowtime = null;
         let selectedSeats = [];
+        
+        // Bluetooth Variables
+        let bluetoothDevice = null;
+        let printCharacteristic = null;
 
         // ==========================================
         // UTILITY FUNCTIONS
@@ -448,9 +453,7 @@
             }
         }
 
-        function logout() {
-            location.reload();
-        }
+        function logout() { location.reload(); }
 
         // ==========================================
         // ADMIN FUNCTIONS
@@ -464,19 +467,16 @@
             showLoading("กำลังโหลดข้อมูลระบบ...");
             try {
                 let [setRes, movRes] = await Promise.all([
-                    fetchAPI("getSettings"),
-                    fetchAPI("getMovies")
+                    fetchAPI("getSettings"), fetchAPI("getMovies")
                 ]);
                 
                 globalData.settings = setRes.data;
                 globalData.movies = movRes.data;
                 
-                // Populate Settings
                 if(globalData.settings.ShopName) {
                     document.getElementById('set-shopname').value = globalData.settings.ShopName;
                 }
                 
-                // Populate Movie Select for Showtimes
                 let movieSelect = document.getElementById('shw-movie');
                 movieSelect.innerHTML = "";
                 globalData.movies.forEach(m => {
@@ -485,9 +485,7 @@
                     movieSelect.appendChild(opt);
                 });
                 closeLoading();
-            } catch(e) {
-                showError(e.message);
-            }
+            } catch(e) { showError(e.message); }
         }
 
         async function saveSettings() {
@@ -513,7 +511,7 @@
             try {
                 await fetchAPI("addMovie", { title, coverBase64: cover, duration });
                 showSuccess("เพิ่มภาพยนตร์แล้ว");
-                loadAdminData(); // refresh
+                loadAdminData(); 
             } catch(e) { showError(e.message); }
         }
 
@@ -559,7 +557,6 @@
                 globalData.showtimes = shwRes.data;
                 globalData.bookings = bookRes.data;
 
-                // Set UI Headers
                 if(globalData.settings.ShopName) document.getElementById('pos-shopname').innerText = globalData.settings.ShopName;
                 if(globalData.settings.LogoBase64) {
                     let img = document.getElementById('pos-logo');
@@ -567,7 +564,6 @@
                     img.classList.remove('hidden');
                 }
 
-                // Populate Movies
                 let mSelect = document.getElementById('pos-movie-select');
                 mSelect.innerHTML = '<option value="">-- เลือกภาพยนตร์ --</option>';
                 globalData.movies.forEach(m => {
@@ -591,10 +587,7 @@
                 let sDate = s.Date || s.date || "ไม่ระบุวันที่";
                 let sTime = s.Time || s.time || "ไม่ระบุเวลา";
                 let sID = s.ID || s.id || "";
-                
-                if(sID) {
-                    sSelect.innerHTML += `<option value="${sID}">${sDate} | ${sTime}</option>`;
-                }
+                if(sID) sSelect.innerHTML += `<option value="${sID}">${sDate} | ${sTime}</option>`;
             });
         }
 
@@ -607,11 +600,7 @@
             }
 
             currentShowtime = globalData.showtimes.find(s => (s.ID || s.id) === shwId);
-            
-            if(!currentShowtime) {
-                showError("เกิดข้อผิดพลาดในการดึงข้อมูลรอบฉาย ลองโหลดหน้าเว็บใหม่");
-                return;
-            }
+            if(!currentShowtime) return showError("เกิดข้อผิดพลาดในการดึงข้อมูลรอบฉาย ลองโหลดหน้าเว็บใหม่");
 
             selectedSeats = [];
             updateCart();
@@ -660,13 +649,8 @@
                     seat.setAttribute('data-price', row.price);
                     seat.setAttribute('data-type', row.type);
                     
-                    if(!isBooked) {
-                        seat.onclick = () => toggleSeat(seat);
-                    }
-                    
-                    if(i === 6) { 
-                        seat.classList.add('ml-8');
-                    }
+                    if(!isBooked) seat.onclick = () => toggleSeat(seat);
+                    if(i === 6) seat.classList.add('ml-8');
                     rowDiv.appendChild(seat);
                 }
                 
@@ -709,9 +693,7 @@
                     total += s.price;
                     cartDiv.innerHTML += `
                         <div class="bg-gray-800 p-3 rounded-lg flex justify-between items-center border border-gray-700">
-                            <div>
-                                <span class="font-bold text-lg text-white">${s.id}</span>
-                            </div>
+                            <div><span class="font-bold text-lg text-white">${s.id}</span></div>
                             <span class="text-yellow-500 font-bold">฿${s.price}</span>
                         </div>
                     `;
@@ -758,12 +740,11 @@
                     };
                     
                     let result = await fetchAPI("bookTicket", payload);
-                    
                     globalData.bookings.push({ ShowtimeID: (currentShowtime.ID || currentShowtime.id), Seats: seatIds.join(",") });
                     
                     Swal.fire({
-                        icon: 'success', title: 'สำเร็จ', text: 'บันทึกข้อมูลเรียบร้อย กำลังเตรียมพิมพ์ตั๋ว...',
-                        timer: 2000, showConfirmButton: false, background: '#1e1e1e', color: '#fff'
+                        icon: 'success', title: 'สำเร็จ', text: 'บันทึกข้อมูลเรียบร้อย กำลังสั่งพิมพ์...',
+                        timer: 1500, showConfirmButton: false, background: '#1e1e1e', color: '#fff'
                     }).then(() => {
                         prepareTicket(result.receiptID, result.ticketID, result.timestamp, payMethod);
                     });
@@ -772,12 +753,102 @@
         }
 
         // ==========================================
-        // PRINTING FUNCTION (อัปเดตให้รองรับหน้าต่างพิมพ์ของเบราว์เซอร์อย่างสมบูรณ์)
+        // BLUETOOTH & DIRECT IMAGE PRINTING LOGIC
         // ==========================================
+        async function connectBluetoothPrinter() {
+            try {
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['000018f0-0000-1000-8000-00805f9b34fb'] }],
+                    optionalServices: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2'] 
+                });
+                
+                let server = await bluetoothDevice.gatt.connect();
+                let service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+                printCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+                
+                let statusEl = document.getElementById('bt-status');
+                statusEl.innerHTML = "เชื่อมต่อแล้ว";
+                statusEl.classList.remove('text-red-500'); statusEl.classList.add('text-green-500');
+                
+                bluetoothDevice.addEventListener('gattserverdisconnected', () => {
+                    statusEl.innerHTML = "ไม่ได้เชื่อมต่อ";
+                    statusEl.classList.add('text-red-500'); statusEl.classList.remove('text-green-500');
+                    printCharacteristic = null;
+                });
+                
+                Swal.fire({ icon: 'success', title: 'เชื่อมต่อเครื่องพิมพ์สำเร็จ', timer: 1500, showConfirmButton: false });
+            } catch(error) {
+                console.error(error);
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อ Bluetooth ได้ กรุณาตรวจสอบว่าเปิดเครื่องและจับคู่ไว้แล้ว', 'error');
+            }
+        }
+
+        // ฟังก์ชั่นแปลง HTML เป็นรูปภาพขาวดำ และส่งข้อมูลเข้าเครื่องพิมพ์ผ่าน ESC/POS Raster command
+        async function printCanvasOverBluetooth(canvas) {
+            if (!printCharacteristic) return;
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width; // ควรจะเป็น 576
+            const height = canvas.height;
+            const imgData = ctx.getImageData(0, 0, width, height).data;
+
+            const bytesPerRow = Math.ceil(width / 8);
+            const escposData = [];
+
+            // คำสั่งเครื่องพิมพ์ ESC/POS
+            // 1. กำหนดระยะบรรทัด 2. จัดกึ่งกลาง 
+            escposData.push(0x1B, 0x33, 0x00, 0x1B, 0x61, 0x01);
+
+            // 3. Raster Bit Image Command (GS v 0)
+            escposData.push(0x1D, 0x76, 0x30, 0x00);
+            escposData.push(bytesPerRow % 256, Math.floor(bytesPerRow / 256));
+            escposData.push(height % 256, Math.floor(height / 256));
+
+            // แปลงพิกเซลสีให้เป็นขาวดำ (Monochrome threshold)
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < bytesPerRow; x++) {
+                    let byte = 0;
+                    for (let bit = 0; bit < 8; bit++) {
+                        const px = (x * 8) + bit;
+                        if (px < width) {
+                            const idx = (y * width + px) * 4;
+                            const r = imgData[idx]; const g = imgData[idx+1]; const b = imgData[idx+2]; const a = imgData[idx+3];
+                            // ความสว่าง < 128 ถือว่าเป็นสีดำ ให้สั่งพิมพ์ (bit = 1)
+                            const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+                            if (a > 128 && luminance < 128) {
+                                byte |= (1 << (7 - bit));
+                            }
+                        }
+                    }
+                    escposData.push(byte);
+                }
+            }
+
+            // 4. สั่งเลื่อนกระดาษ 5 บรรทัด และตัดกระดาษ (GS V)
+            escposData.push(0x1B, 0x64, 0x05, 0x1D, 0x56, 0x41, 0x10);
+
+            // ส่งข้อมูลผ่าน Bluetooth (แบ่งเป็น Chunk เล็กๆ ป้องกัน Buffer ล้นในเครื่องพิมพ์จีน)
+            showLoading("กำลังส่งข้อมูลเข้าเครื่องพิมพ์...");
+            const CHUNK_SIZE = 256; 
+            const dataArray = new Uint8Array(escposData);
+            try {
+                for (let i = 0; i < dataArray.length; i += CHUNK_SIZE) {
+                    const chunk = dataArray.slice(i, i + CHUNK_SIZE);
+                    await printCharacteristic.writeValue(chunk);
+                    // หน่วงเวลาเล็กน้อยให้เครื่องพิมพ์เขียนข้อมูลทัน
+                    await new Promise(resolve => setTimeout(resolve, 20));
+                }
+                closeLoading();
+            } catch(e) {
+                closeLoading();
+                throw e;
+            }
+        }
+
+        // รวบรวมข้อมูลลงใบเสร็จ
         function prepareTicket(receiptID, ticketID, timestamp, payMethod) {
             let movie = globalData.movies.find(m => (m.ID || m.id) === (currentShowtime.MovieID || currentShowtime.movieID));
             
-            // ใส่ข้อมูลลงในหน้าใบเสร็จ
+            // นำข้อมูลลง HTML #ticket-print-area
             let printLogo = document.getElementById('print-logo');
             if(globalData.settings.LogoBase64) {
                 printLogo.src = globalData.settings.LogoBase64;
@@ -796,22 +867,35 @@
             document.getElementById('print-receipt-id').innerText = receiptID;
             document.getElementById('print-ticket-id').innerText = ticketID;
 
-            // สร้าง Barcode
+            // Generate Barcode & QR Code
             JsBarcode("#barcode", receiptID, {
-                format: "CODE128", width: 1.5, height: 40, displayValue: false, margin: 0
+                format: "CODE128", width: 3, height: 80, displayValue: false, margin: 0
             });
-
-            // สร้าง QR Code
             document.getElementById('qrcode').innerHTML = "";
             new QRCode(document.getElementById('qrcode'), {
-                text: ticketID, width: 80, height: 80, colorDark : "#000000", colorLight : "#ffffff"
+                text: ticketID, width: 200, height: 200, colorDark : "#000000", colorLight : "#ffffff"
             });
 
-            // หน่วงเวลา 1 วินาที เพื่อให้รูปภาพและบาร์โค้ด Render เสร็จสมบูรณ์ 100% ก่อนเปิดหน้าต่างพิมพ์
-            setTimeout(() => {
-                window.print(); // สั่งพิมพ์ผ่านระบบของ OS
-                loadSeatMap(); // รีเซ็ตผังที่นั่งหลังพิมพ์เสร็จ
-            }, 1000);
+            // รอภาพและกราฟิกเรนเดอร์ให้สมบูรณ์ แล้วแปลงเป็นภาพส่งเข้าเครื่องปริ้น
+            setTimeout(async () => {
+                const element = document.getElementById('ticket-print-area');
+                
+                if (printCharacteristic) {
+                    // หากต่อ Bluetooth ไว้ -> พิมพ์เงียบแบบอัตโนมัติ
+                    try {
+                        const canvas = await html2canvas(element, { scale: 1, backgroundColor: "#ffffff" });
+                        await printCanvasOverBluetooth(canvas);
+                    } catch (e) {
+                        console.error(e);
+                        Swal.fire('ข้อผิดพลาด', 'มีปัญหาในการส่งภาพไปยังเครื่องพิมพ์', 'error');
+                    }
+                } else {
+                    // หากไม่ได้ต่อ Bluetooth -> เด้งหน้าต่างปริ้นของเบราว์เซอร์แทน (Fallback)
+                    window.print();
+                }
+                
+                loadSeatMap(); // รีเซ็ตที่นั่งเตรียมรับลูกค้าคนต่อไป
+            }, 800);
         }
     </script>
 </body>
