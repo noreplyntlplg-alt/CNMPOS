@@ -406,7 +406,6 @@
                 document.getElementById('view-admin').classList.remove('hidden');
                 loadAdminData();
             } else if (user !== "" && pass !== "") {
-                // พนักงานปกติ (สมมติว่าผ่าน)
                 document.getElementById('view-login').classList.add('hidden');
                 document.getElementById('view-staff').classList.remove('hidden');
                 loadStaffData();
@@ -448,7 +447,7 @@
                 movieSelect.innerHTML = "";
                 globalData.movies.forEach(m => {
                     let opt = document.createElement('option');
-                    opt.value = m.ID; opt.text = m.Title;
+                    opt.value = m.ID || m.id; opt.text = m.Title || m.title || "ไม่ได้ตั้งชื่อ";
                     movieSelect.appendChild(opt);
                 });
                 closeLoading();
@@ -538,35 +537,56 @@
                 let mSelect = document.getElementById('pos-movie-select');
                 mSelect.innerHTML = '<option value="">-- เลือกภาพยนตร์ --</option>';
                 globalData.movies.forEach(m => {
-                    mSelect.innerHTML += `<option value="${m.ID}">${m.Title}</option>`;
+                    let mID = m.ID || m.id;
+                    let mTitle = m.Title || m.title || "ไม่ระบุชื่อหนัง";
+                    if(mID) mSelect.innerHTML += `<option value="${mID}">${mTitle}</option>`;
                 });
                 closeLoading();
             } catch(e) { showError(e.message); }
         }
 
+        // แก้ไขระบบกรองให้รองรับกรณีหัวตารางไม่เป๊ะ และกันค่า undefined
         function filterShowtimes() {
             let movieID = document.getElementById('pos-movie-select').value;
             let sSelect = document.getElementById('pos-showtime-select');
             sSelect.innerHTML = '<option value="">-- เลือกรอบฉาย --</option>';
             
-            let filtered = globalData.showtimes.filter(s => s.MovieID === movieID);
+            if(!movieID) return;
+
+            let filtered = globalData.showtimes.filter(s => (s.MovieID || s.movieID) === movieID);
             filtered.forEach(s => {
-                sSelect.innerHTML += `<option value="${s.ID}">${s.Date} | ${s.Time}</option>`;
+                let sDate = s.Date || s.date || "ไม่ระบุวันที่";
+                let sTime = s.Time || s.time || "ไม่ระบุเวลา";
+                let sID = s.ID || s.id || "";
+                
+                if(sID) {
+                    sSelect.innerHTML += `<option value="${sID}">${sDate} | ${sTime}</option>`;
+                }
             });
         }
 
+        // แก้ไขระบบโหลดที่นั่งเพื่อป้องกันการพังหากไม่มีข้อมูล
         function loadSeatMap() {
             let shwId = document.getElementById('pos-showtime-select').value;
-            if(!shwId) return;
+            if(!shwId || shwId === "") {
+                document.getElementById('empty-state').classList.remove('hidden');
+                document.getElementById('seat-map-container').classList.add('hidden');
+                return;
+            }
 
-            currentShowtime = globalData.showtimes.find(s => s.ID === shwId);
+            currentShowtime = globalData.showtimes.find(s => (s.ID || s.id) === shwId);
+            
+            if(!currentShowtime) {
+                showError("เกิดข้อผิดพลาดในการดึงข้อมูลรอบฉาย ลองโหลดหน้าเว็บใหม่");
+                return;
+            }
+
             selectedSeats = [];
             updateCart();
 
-            // Find Booked Seats for this showtime
             let bookedStr = globalData.bookings
-                .filter(b => b.ShowtimeID === shwId)
-                .map(b => b.Seats)
+                .filter(b => (b.ShowtimeID || b.showtimeID) === shwId)
+                .map(b => (b.Seats || b.seats))
                 .join(",");
             let bookedArray = bookedStr ? bookedStr.split(",") : [];
 
@@ -577,13 +597,16 @@
             let grid = document.getElementById('seat-grid');
             grid.innerHTML = "";
 
-            // Generate Map: Rows A-C (Red), D-E (Blue). 10 columns per row.
+            // ตรวจสอบราคาหากไม่มีให้ใช้ค่าเริ่มต้น
+            let priceRed = parseInt(currentShowtime.PriceRed || currentShowtime.priceRed || 120);
+            let priceBlue = parseInt(currentShowtime.PriceBlue || currentShowtime.priceBlue || 150);
+
             const rowsConfig = [
-                { id: 'E', type: 'blue', price: currentShowtime.PriceBlue },
-                { id: 'D', type: 'blue', price: currentShowtime.PriceBlue },
-                { id: 'C', type: 'red', price: currentShowtime.PriceRed },
-                { id: 'B', type: 'red', price: currentShowtime.PriceRed },
-                { id: 'A', type: 'red', price: currentShowtime.PriceRed }
+                { id: 'E', type: 'blue', price: priceBlue },
+                { id: 'D', type: 'blue', price: priceBlue },
+                { id: 'C', type: 'red', price: priceRed },
+                { id: 'B', type: 'red', price: priceRed },
+                { id: 'A', type: 'red', price: priceRed }
             ];
 
             rowsConfig.forEach(row => {
@@ -610,7 +633,7 @@
                         seat.onclick = () => toggleSeat(seat);
                     }
                     
-                    if(i === 6) { // Aisle gap
+                    if(i === 6) { 
                         seat.classList.add('ml-8');
                     }
                     rowDiv.appendChild(seat);
@@ -697,7 +720,7 @@
                 try {
                     let seatIds = selectedSeats.map(s => s.id);
                     let payload = {
-                        showtimeID: currentShowtime.ID,
+                        showtimeID: (currentShowtime.ID || currentShowtime.id),
                         seats: seatIds,
                         total: total,
                         paymentMethod: payMethod
@@ -705,8 +728,7 @@
                     
                     let result = await fetchAPI("bookTicket", payload);
                     
-                    // Add local mock data to prevent refresh requirement
-                    globalData.bookings.push({ ShowtimeID: currentShowtime.ID, Seats: seatIds.join(",") });
+                    globalData.bookings.push({ ShowtimeID: (currentShowtime.ID || currentShowtime.id), Seats: seatIds.join(",") });
                     
                     Swal.fire({
                         icon: 'success', title: 'สำเร็จ', text: 'บันทึกข้อมูลเรียบร้อย กำลังพิมพ์ตั๋ว...',
@@ -725,7 +747,7 @@
             try {
                 bluetoothDevice = await navigator.bluetooth.requestDevice({
                     filters: [{ services: ['000018f0-0000-1000-8000-00805f9b34fb'] }],
-                    optionalServices: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2'] // Standard ESC/POS
+                    optionalServices: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2'] 
                 });
                 
                 let server = await bluetoothDevice.gatt.connect();
@@ -743,45 +765,37 @@
         }
 
         function prepareTicket(receiptID, ticketID, timestamp, payMethod) {
-            let movie = globalData.movies.find(m => m.ID === currentShowtime.MovieID);
+            let movie = globalData.movies.find(m => (m.ID || m.id) === (currentShowtime.MovieID || currentShowtime.movieID));
             
-            // Set Print HTML
             if(globalData.settings.LogoBase64) document.getElementById('print-logo').src = globalData.settings.LogoBase64;
             document.getElementById('print-shopname').innerText = globalData.settings.ShopName || "CINEMA";
             document.getElementById('print-date').innerText = timestamp;
-            document.getElementById('print-movie').innerText = movie.Title;
-            document.getElementById('print-time').innerText = `${currentShowtime.Date} | ${currentShowtime.Time}`;
+            document.getElementById('print-movie').innerText = (movie.Title || movie.title || "ไม่ระบุชื่อ");
+            document.getElementById('print-time').innerText = `${currentShowtime.Date || currentShowtime.date} | ${currentShowtime.Time || currentShowtime.time}`;
             document.getElementById('print-seats').innerText = selectedSeats.map(s => s.id).join(", ");
             document.getElementById('print-total').innerText = selectedSeats.reduce((sum,s) => sum+s.price, 0).toLocaleString();
             document.getElementById('print-paymethod').innerText = payMethod;
             document.getElementById('print-receipt-id').innerText = receiptID;
             document.getElementById('print-ticket-id').innerText = ticketID;
 
-            // Generate Barcode (Receipt ID)
             JsBarcode("#barcode", receiptID, {
                 format: "CODE128", width: 1.5, height: 40, displayValue: false, margin: 0
             });
 
-            // Generate QR Code (Ticket ID)
             document.getElementById('qrcode').innerHTML = "";
             new QRCode(document.getElementById('qrcode'), {
                 text: ticketID, width: 80, height: 80, colorDark : "#000000", colorLight : "#ffffff"
             });
 
-            // Delay to let render finish before printing
             setTimeout(() => {
                 if(printCharacteristic) {
-                    // หากต่อ Bluetooth ไว้ ส่งคำสั่งตัดกระดาษ (ESC/POS Auto Cut Command: GS V 1)
                     try {
                         let cutCommand = new Uint8Array([0x1D, 0x56, 0x41, 0x10]);
                         printCharacteristic.writeValue(cutCommand);
                     } catch(e) { console.log("BT Cut err", e); }
                 }
                 
-                // สั่ง Print หน้าเว็บ
                 window.print();
-                
-                // Reset Selection
                 loadSeatMap();
             }, 500);
         }
