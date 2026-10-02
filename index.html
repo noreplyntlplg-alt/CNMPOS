@@ -634,7 +634,6 @@
                     let result = await fetchAPI("bookTicket", payload);
                     globalData.bookings.push({ ShowtimeID: (currentShowtime.ID || currentShowtime.id), Seats: seatIds.join(",") });
                     
-                    // ปรินท์ทันทีแบบรวดเร็ว
                     await prepareTicket(result.receiptID, result.ticketID, result.timestamp, payMethod);
                     
                     closeLoading();
@@ -647,7 +646,7 @@
         }
 
         // ==========================================
-        // BLUETOOTH & HIGH-SPEED IMAGE PRINTING
+        // BLUETOOTH & OPTIMIZED FAST PRINTING
         // ==========================================
         async function connectBluetoothPrinter() {
             try {
@@ -690,7 +689,7 @@
             const height = processCanvas.height;
             const escposData = [];
 
-            // คำสั่ง ESC/POS พิมพ์ด่วน
+            // คำสั่ง ESC/POS
             escposData.push(0x1B, 0x40); // Initialize
             escposData.push(0x1B, 0x33, 0x00); // Line spacing
             escposData.push(0x1B, 0x61, 0x01); // Center align
@@ -714,17 +713,17 @@
                 }
             }
 
-            // คำสั่งตัดกระดาษอัตโนมัติทันที
+            // ตัดกระดาษ
             escposData.push(0x1B, 0x64, 0x04, 0x1D, 0x56, 0x41, 0x10);
 
-            // เพิ่มขนาด Chunk เป็น 512 ไบต์ (ส่งข้อมูลรอบละมากๆ เพื่อความเร็วสูงสุด) และลดดีเลย์เหลือ 5ms
-            const CHUNK_SIZE = 512; 
+            // ปรับขนาด Chunk = 256 และ Delay = 10ms (ความเร็วสูงสุดที่เครื่องพิมพ์ไม่หลุด/ไม่เพี้ยน)
+            const CHUNK_SIZE = 256; 
             const dataArray = new Uint8Array(escposData);
             
             for (let i = 0; i < dataArray.length; i += CHUNK_SIZE) {
                 const chunk = dataArray.slice(i, i + CHUNK_SIZE);
                 await printCharacteristic.writeValue(chunk);
-                await new Promise(resolve => setTimeout(resolve, 5)); 
+                await new Promise(resolve => setTimeout(resolve, 10)); 
             }
         }
 
@@ -750,7 +749,6 @@
             document.getElementById('qrcode').innerHTML = "";
             new QRCode(document.getElementById('qrcode'), { text: ticketID, width: 200, height: 200, colorDark : "#000000", colorLight : "#ffffff" });
 
-            // ใช้ Promise รอให้เรนเดอร์ภาพเสร็จ แล้วยิงรวดเดียวจบ
             const element = document.getElementById('ticket-print-area');
             if (printCharacteristic) {
                 try {
