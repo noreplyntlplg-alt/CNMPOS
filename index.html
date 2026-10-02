@@ -22,13 +22,11 @@
             background-color: #121212;
             color: #ffffff;
         }
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #1e1e1e; }
         ::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #6a6a6a; }
 
-        /* Seat Styles */
         .seat {
             width: 40px; height: 40px;
             border-radius: 8px 8px 0 0;
@@ -60,14 +58,15 @@
             border: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* สำหรับซ่อนใบเสร็จไว้เรนเดอร์ภาพเข้า Bluetooth */
+        /* กล่องซ่อนสำหรับพิมพ์ (ปรับความกว้างให้ตรงกับเครื่อง 80mm ที่สุด) */
         #offscreen-printer {
             position: absolute;
             top: -9999px;
             left: -9999px;
+            width: 576px;
+            background: white;
         }
 
-        /* จัด Layout ให้พอดีกับหน้ากว้าง 576 dots ของเครื่องพิมพ์ 80mm */
         #ticket-print-area {
             width: 576px; 
             background: white;
@@ -77,7 +76,6 @@
             box-sizing: border-box;
         }
 
-        /* กรณีไม่มี Bluetooth (Fallback) */
         @media print {
             @page { margin: 0; size: 80mm auto; }
             body > *:not(#offscreen-printer) { display: none !important; }
@@ -249,7 +247,6 @@
             </div>
             
             <div class="flex items-center space-x-4">
-                <!-- เมนู Bluetooth ที่คุณต้องการ กลับมาแล้วครับ -->
                 <button onclick="connectBluetoothPrinter()" class="flex items-center text-gray-400 hover:text-white transition bg-gray-800 px-3 py-1 rounded" title="เชื่อมต่อเครื่องพิมพ์ Bluetooth">
                     <i class="fa-brands fa-bluetooth text-xl mr-2"></i> 
                     <span id="bt-status" class="text-sm font-bold text-red-500">ไม่ได้เชื่อมต่อ</span>
@@ -265,11 +262,7 @@
             <div class="flex-1 bg-[#1a1a1a] p-6 overflow-y-auto relative flex flex-col items-center">
                 <div id="seat-map-container" class="hidden w-full max-w-4xl flex flex-col items-center mt-10">
                     <div class="screen-curve uppercase tracking-[10px]">SCREEN</div>
-                    <div id="seat-grid" class="flex flex-col gap-3 mt-10">
-                        <!-- Seats generated via JS -->
-                    </div>
-                    
-                    <!-- Legend -->
+                    <div id="seat-grid" class="flex flex-col gap-3 mt-10"></div>
                     <div class="flex space-x-8 mt-16 border-t border-gray-800 pt-6 w-full justify-center">
                         <div class="flex items-center"><div class="seat seat-red w-6 h-6 mr-2"></div> ที่นั่งปกติ</div>
                         <div class="flex items-center"><div class="seat seat-blue w-6 h-6 mr-2"></div> ที่นั่งพิเศษ</div>
@@ -311,10 +304,7 @@
         </div>
     </div>
 
-    <!-- 
-        Hidden Ticket for Direct Bluetooth Image Printing 
-        ออกแบบหน้ากว้างให้เป็น 576px เพื่อให้พอดีกับ 80mm Printer แบบเป๊ะๆ
-    -->
+    <!-- Hidden Ticket for Direct Bluetooth Image Printing -->
     <div id="offscreen-printer">
         <div id="ticket-print-area">
             <div style="text-align: center; margin-bottom: 20px;">
@@ -365,42 +355,21 @@
 
     <!-- MAIN JAVASCRIPT -->
     <script>
-        // ==========================================
-        // CONFIGURATION
-        // ==========================================
         const API_URL = "https://script.google.com/macros/s/AKfycbylz-ZxtDp8t91c7Iun5makvv6g997u5s3KH7RohJPla6c8GmXZYTTz9XPY8MT_6dTI/exec"; // *** เปลี่ยน URL ตรงนี้ ***
         
-        // State Variables
-        let globalData = {
-            settings: {}, movies: [], showtimes: [], bookings: []
-        };
+        let globalData = { settings: {}, movies: [], showtimes: [], bookings: [] };
         let currentShowtime = null;
         let selectedSeats = [];
-        
-        // Bluetooth Variables
         let bluetoothDevice = null;
         let printCharacteristic = null;
 
-        // ==========================================
-        // UTILITY FUNCTIONS
-        // ==========================================
         function showLoading(text = "กำลังประมวลผล...") {
-            Swal.fire({
-                title: text,
-                allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading() },
-                background: '#1e1e1e', color: '#fff'
-            });
+            Swal.fire({ title: text, allowOutsideClick: false, didOpen: () => { Swal.showLoading() }, background: '#1e1e1e', color: '#fff' });
         }
         function closeLoading() { Swal.close(); }
-        function showError(msg) {
-            Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: msg, background: '#1e1e1e', color: '#fff' });
-        }
-        function showSuccess(msg) {
-            Swal.fire({ icon: 'success', title: 'สำเร็จ', text: msg, timer: 1500, showConfirmButton: false, background: '#1e1e1e', color: '#fff' });
-        }
+        function showError(msg) { Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: msg, background: '#1e1e1e', color: '#fff' }); }
+        function showSuccess(msg) { Swal.fire({ icon: 'success', title: 'สำเร็จ', text: msg, timer: 1500, showConfirmButton: false, background: '#1e1e1e', color: '#fff' }); }
 
-        // File to Base64
         function encodeImageFileAsURL(element, previewId) {
             let file = element.files[0];
             let reader = new FileReader();
@@ -416,30 +385,21 @@
         async function fetchAPI(action, payload = null) {
             let url = `${API_URL}?action=${action}`;
             let options = { method: payload ? 'POST' : 'GET' };
-            
             if (payload) {
                 options.body = JSON.stringify(payload);
                 options.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
             }
-
             try {
                 let response = await fetch(url, options);
                 let result = await response.json();
                 if (result.status === "error") throw new Error(result.message);
                 return result;
-            } catch (error) {
-                console.error("API Error:", error);
-                throw error;
-            }
+            } catch (error) { throw error; }
         }
 
-        // ==========================================
-        // INIT & LOGIN
-        // ==========================================
         function login() {
             let user = document.getElementById('login-user').value;
             let pass = document.getElementById('login-pass').value;
-            
             if(user === "admin" && pass === "admin") {
                 document.getElementById('view-login').classList.add('hidden');
                 document.getElementById('view-admin').classList.remove('hidden');
@@ -448,16 +408,11 @@
                 document.getElementById('view-login').classList.add('hidden');
                 document.getElementById('view-staff').classList.remove('hidden');
                 loadStaffData();
-            } else {
-                showError("กรุณากรอกข้อมูลให้ครบถ้วน");
-            }
+            } else { showError("กรุณากรอกข้อมูลให้ครบถ้วน"); }
         }
 
         function logout() { location.reload(); }
 
-        // ==========================================
-        // ADMIN FUNCTIONS
-        // ==========================================
         function switchAdminTab(tabId) {
             document.querySelectorAll('.admin-tab').forEach(t => t.classList.add('hidden'));
             document.getElementById('tab-' + tabId).classList.remove('hidden');
@@ -466,17 +421,9 @@
         async function loadAdminData() {
             showLoading("กำลังโหลดข้อมูลระบบ...");
             try {
-                let [setRes, movRes] = await Promise.all([
-                    fetchAPI("getSettings"), fetchAPI("getMovies")
-                ]);
-                
-                globalData.settings = setRes.data;
-                globalData.movies = movRes.data;
-                
-                if(globalData.settings.ShopName) {
-                    document.getElementById('set-shopname').value = globalData.settings.ShopName;
-                }
-                
+                let [setRes, movRes] = await Promise.all([ fetchAPI("getSettings"), fetchAPI("getMovies") ]);
+                globalData.settings = setRes.data; globalData.movies = movRes.data;
+                if(globalData.settings.ShopName) document.getElementById('set-shopname').value = globalData.settings.ShopName;
                 let movieSelect = document.getElementById('shw-movie');
                 movieSelect.innerHTML = "";
                 globalData.movies.forEach(m => {
@@ -493,7 +440,6 @@
             let logoFile = document.getElementById('set-logo');
             let logoBase64 = logoFile.getAttribute('data-base64') || globalData.settings.LogoBase64 || "";
             let printer = document.getElementById('set-printer').value;
-            
             showLoading();
             try {
                 await fetchAPI("saveSettings", { shopName: shopName, logoBase64: logoBase64, printerType: printer });
@@ -506,12 +452,10 @@
             let cover = document.getElementById('mov-cover').getAttribute('data-base64') || "";
             let duration = document.getElementById('mov-duration').value;
             if(!title) return showError("ระบุชื่อหนัง");
-            
             showLoading();
             try {
                 await fetchAPI("addMovie", { title, coverBase64: cover, duration });
-                showSuccess("เพิ่มภาพยนตร์แล้ว");
-                loadAdminData(); 
+                showSuccess("เพิ่มภาพยนตร์แล้ว"); loadAdminData(); 
             } catch(e) { showError(e.message); }
         }
 
@@ -522,7 +466,6 @@
             let pRed = document.getElementById('shw-red').value;
             let pBlue = document.getElementById('shw-blue').value;
             if(!movieID || !date || !time) return showError("กรอกข้อมูลไม่ครบ");
-
             showLoading();
             try {
                 await fetchAPI("addShowtime", { movieID, date, time, priceRed: pRed, priceBlue: pBlue });
@@ -535,7 +478,6 @@
             let user = document.getElementById('stf-user').value;
             let pass = document.getElementById('stf-pass').value;
             if(!name || !user || !pass) return showError("กรอกข้อมูลไม่ครบ");
-
             showLoading();
             try {
                 await fetchAPI("addStaff", { name, username: user, password: pass });
@@ -543,32 +485,24 @@
             } catch(e) { showError(e.message); }
         }
 
-        // ==========================================
-        // STAFF POS FUNCTIONS
-        // ==========================================
         async function loadStaffData() {
             showLoading("กำลังโหลดข้อมูล...");
             try {
                 let [setRes, movRes, shwRes, bookRes] = await Promise.all([
                     fetchAPI("getSettings"), fetchAPI("getMovies"), fetchAPI("getShowtimes"), fetchAPI("getBookings")
                 ]);
-                globalData.settings = setRes.data;
-                globalData.movies = movRes.data;
-                globalData.showtimes = shwRes.data;
-                globalData.bookings = bookRes.data;
+                globalData.settings = setRes.data; globalData.movies = movRes.data;
+                globalData.showtimes = shwRes.data; globalData.bookings = bookRes.data;
 
                 if(globalData.settings.ShopName) document.getElementById('pos-shopname').innerText = globalData.settings.ShopName;
                 if(globalData.settings.LogoBase64) {
                     let img = document.getElementById('pos-logo');
-                    img.src = globalData.settings.LogoBase64;
-                    img.classList.remove('hidden');
+                    img.src = globalData.settings.LogoBase64; img.classList.remove('hidden');
                 }
-
                 let mSelect = document.getElementById('pos-movie-select');
                 mSelect.innerHTML = '<option value="">-- เลือกภาพยนตร์ --</option>';
                 globalData.movies.forEach(m => {
-                    let mID = m.ID || m.id;
-                    let mTitle = m.Title || m.title || "ไม่ระบุชื่อหนัง";
+                    let mID = m.ID || m.id; let mTitle = m.Title || m.title || "ไม่ระบุชื่อหนัง";
                     if(mID) mSelect.innerHTML += `<option value="${mID}">${mTitle}</option>`;
                 });
                 closeLoading();
@@ -579,9 +513,7 @@
             let movieID = document.getElementById('pos-movie-select').value;
             let sSelect = document.getElementById('pos-showtime-select');
             sSelect.innerHTML = '<option value="">-- เลือกรอบฉาย --</option>';
-            
             if(!movieID) return;
-
             let filtered = globalData.showtimes.filter(s => (s.MovieID || s.movieID) === movieID);
             filtered.forEach(s => {
                 let sDate = s.Date || s.date || "ไม่ระบุวันที่";
@@ -598,23 +530,16 @@
                 document.getElementById('seat-map-container').classList.add('hidden');
                 return;
             }
-
             currentShowtime = globalData.showtimes.find(s => (s.ID || s.id) === shwId);
             if(!currentShowtime) return showError("เกิดข้อผิดพลาดในการดึงข้อมูลรอบฉาย ลองโหลดหน้าเว็บใหม่");
+            selectedSeats = []; updateCart();
 
-            selectedSeats = [];
-            updateCart();
-
-            let bookedStr = globalData.bookings
-                .filter(b => (b.ShowtimeID || b.showtimeID) === shwId)
-                .map(b => (b.Seats || b.seats))
-                .join(",");
+            let bookedStr = globalData.bookings.filter(b => (b.ShowtimeID || b.showtimeID) === shwId).map(b => (b.Seats || b.seats)).join(",");
             let bookedArray = bookedStr ? bookedStr.split(",") : [];
 
             document.getElementById('empty-state').classList.add('hidden');
             let container = document.getElementById('seat-map-container');
             container.classList.remove('hidden');
-            
             let grid = document.getElementById('seat-grid');
             grid.innerHTML = "";
 
@@ -622,70 +547,50 @@
             let priceBlue = parseInt(currentShowtime.PriceBlue || currentShowtime.priceBlue || 150);
 
             const rowsConfig = [
-                { id: 'E', type: 'blue', price: priceBlue },
-                { id: 'D', type: 'blue', price: priceBlue },
-                { id: 'C', type: 'red', price: priceRed },
-                { id: 'B', type: 'red', price: priceRed },
-                { id: 'A', type: 'red', price: priceRed }
+                { id: 'E', type: 'blue', price: priceBlue }, { id: 'D', type: 'blue', price: priceBlue },
+                { id: 'C', type: 'red', price: priceRed }, { id: 'B', type: 'red', price: priceRed }, { id: 'A', type: 'red', price: priceRed }
             ];
 
             rowsConfig.forEach(row => {
                 let rowDiv = document.createElement('div');
                 rowDiv.className = 'flex gap-2 items-center justify-center';
-                
                 let rowLabel = document.createElement('div');
-                rowLabel.className = 'w-6 text-center font-bold text-gray-500 mr-4';
-                rowLabel.innerText = row.id;
+                rowLabel.className = 'w-6 text-center font-bold text-gray-500 mr-4'; rowLabel.innerText = row.id;
                 rowDiv.appendChild(rowLabel);
 
                 for(let i=1; i<=10; i++) {
                     let seatId = row.id + i;
                     let isBooked = bookedArray.includes(seatId);
-                    
                     let seat = document.createElement('div');
                     seat.className = `seat ${isBooked ? 'seat-booked' : 'seat-' + row.type}`;
                     seat.innerText = i;
-                    seat.setAttribute('data-id', seatId);
-                    seat.setAttribute('data-price', row.price);
-                    seat.setAttribute('data-type', row.type);
-                    
+                    seat.setAttribute('data-id', seatId); seat.setAttribute('data-price', row.price); seat.setAttribute('data-type', row.type);
                     if(!isBooked) seat.onclick = () => toggleSeat(seat);
                     if(i === 6) seat.classList.add('ml-8');
                     rowDiv.appendChild(seat);
                 }
-                
                 let rowLabelRight = document.createElement('div');
-                rowLabelRight.className = 'w-6 text-center font-bold text-gray-500 ml-4';
-                rowLabelRight.innerText = row.id;
+                rowLabelRight.className = 'w-6 text-center font-bold text-gray-500 ml-4'; rowLabelRight.innerText = row.id;
                 rowDiv.appendChild(rowLabelRight);
-
                 grid.appendChild(rowDiv);
             });
         }
 
         function toggleSeat(el) {
-            let id = el.getAttribute('data-id');
-            let price = parseInt(el.getAttribute('data-price'));
-            let type = el.getAttribute('data-type');
-            
+            let id = el.getAttribute('data-id'); let price = parseInt(el.getAttribute('data-price')); let type = el.getAttribute('data-type');
             let index = selectedSeats.findIndex(s => s.id === id);
             if(index > -1) {
                 selectedSeats.splice(index, 1);
-                el.classList.remove('seat-selected');
-                el.classList.add('seat-' + type);
+                el.classList.remove('seat-selected'); el.classList.add('seat-' + type);
             } else {
                 selectedSeats.push({id, price});
-                el.classList.remove('seat-' + type);
-                el.classList.add('seat-selected');
+                el.classList.remove('seat-' + type); el.classList.add('seat-selected');
             }
             updateCart();
         }
 
         function updateCart() {
-            let cartDiv = document.getElementById('cart-items');
-            cartDiv.innerHTML = "";
-            let total = 0;
-            
+            let cartDiv = document.getElementById('cart-items'); cartDiv.innerHTML = ""; let total = 0;
             if(selectedSeats.length === 0) {
                 cartDiv.innerHTML = '<p class="text-gray-500 text-sm text-center mt-10">ยังไม่มีที่นั่งที่เลือก</p>';
             } else {
@@ -695,20 +600,16 @@
                         <div class="bg-gray-800 p-3 rounded-lg flex justify-between items-center border border-gray-700">
                             <div><span class="font-bold text-lg text-white">${s.id}</span></div>
                             <span class="text-yellow-500 font-bold">฿${s.price}</span>
-                        </div>
-                    `;
+                        </div>`;
                 });
             }
-            
             document.getElementById('cart-count').innerText = selectedSeats.length + " ที่นั่ง";
             document.getElementById('cart-total').innerText = "฿ " + total.toLocaleString();
         }
 
         async function checkout() {
             if(selectedSeats.length === 0) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกที่นั่ง', 'warning');
-            
             let total = selectedSeats.reduce((sum, s) => sum + s.price, 0);
-            
             const { value: payMethod } = await Swal.fire({
                 title: 'เลือกวิธีชำระเงิน',
                 html: `
@@ -721,10 +622,8 @@
                             <div class="flex items-center"><i class="fa-solid fa-qrcode text-blue-500 text-xl mr-3"></i> สแกนจ่าย (PromptPay)</div>
                             <input type="radio" name="payment" value="PromptPay" class="w-5 h-5">
                         </label>
-                    </div>
-                `,
-                background: '#1e1e1e', color: '#fff',
-                showCancelButton: true, confirmButtonText: 'ยืนยันชำระเงิน', confirmButtonColor: '#22c55e',
+                    </div>`,
+                background: '#1e1e1e', color: '#fff', showCancelButton: true, confirmButtonText: 'ยืนยันชำระเงิน', confirmButtonColor: '#22c55e',
                 preConfirm: () => { return document.querySelector('input[name="payment"]:checked').value; }
             });
 
@@ -732,13 +631,7 @@
                 showLoading("กำลังบันทึกข้อมูล...");
                 try {
                     let seatIds = selectedSeats.map(s => s.id);
-                    let payload = {
-                        showtimeID: (currentShowtime.ID || currentShowtime.id),
-                        seats: seatIds,
-                        total: total,
-                        paymentMethod: payMethod
-                    };
-                    
+                    let payload = { showtimeID: (currentShowtime.ID || currentShowtime.id), seats: seatIds, total: total, paymentMethod: payMethod };
                     let result = await fetchAPI("bookTicket", payload);
                     globalData.bookings.push({ ShowtimeID: (currentShowtime.ID || currentShowtime.id), Seats: seatIds.join(",") });
                     
@@ -753,7 +646,7 @@
         }
 
         // ==========================================
-        // BLUETOOTH & DIRECT IMAGE PRINTING LOGIC
+        // BLUETOOTH & DIRECT IMAGE PRINTING LOGIC (แก้ไขใหม่ทั้งหมด)
         // ==========================================
         async function connectBluetoothPrinter() {
             try {
@@ -761,101 +654,94 @@
                     filters: [{ services: ['000018f0-0000-1000-8000-00805f9b34fb'] }],
                     optionalServices: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2'] 
                 });
-                
                 let server = await bluetoothDevice.gatt.connect();
                 let service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
                 printCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
-                
                 let statusEl = document.getElementById('bt-status');
-                statusEl.innerHTML = "เชื่อมต่อแล้ว";
-                statusEl.classList.remove('text-red-500'); statusEl.classList.add('text-green-500');
+                statusEl.innerHTML = "เชื่อมต่อแล้ว"; statusEl.classList.remove('text-red-500'); statusEl.classList.add('text-green-500');
                 
                 bluetoothDevice.addEventListener('gattserverdisconnected', () => {
-                    statusEl.innerHTML = "ไม่ได้เชื่อมต่อ";
-                    statusEl.classList.add('text-red-500'); statusEl.classList.remove('text-green-500');
+                    statusEl.innerHTML = "ไม่ได้เชื่อมต่อ"; statusEl.classList.add('text-red-500'); statusEl.classList.remove('text-green-500');
                     printCharacteristic = null;
                 });
-                
                 Swal.fire({ icon: 'success', title: 'เชื่อมต่อเครื่องพิมพ์สำเร็จ', timer: 1500, showConfirmButton: false });
             } catch(error) {
                 console.error(error);
-                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อ Bluetooth ได้ กรุณาตรวจสอบว่าเปิดเครื่องและจับคู่ไว้แล้ว', 'error');
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อ Bluetooth ได้', 'error');
             }
         }
 
-        // ฟังก์ชั่นแปลง HTML เป็นรูปภาพขาวดำ และส่งข้อมูลเข้าเครื่องพิมพ์ผ่าน ESC/POS Raster command
         async function printCanvasOverBluetooth(canvas) {
             if (!printCharacteristic) return;
-            const ctx = canvas.getContext('2d');
-            const width = canvas.width; // ควรจะเป็น 576
-            const height = canvas.height;
-            const imgData = ctx.getImageData(0, 0, width, height).data;
 
-            const bytesPerRow = Math.ceil(width / 8);
+            // บังคับแปลงความกว้างของภาพให้เป็น 576 พิกเซลเป๊ะๆ เสมอ (แก้ไขปัญหาภาพเบี้ยว/แถบดำ)
+            const TARGET_WIDTH = 576;
+            const bytesPerRow = TARGET_WIDTH / 8; // = 72 bytes
+            
+            // วาดรูปลงบน Canvas ใหม่ที่ล็อกสเกลไว้
+            const processCanvas = document.createElement('canvas');
+            processCanvas.width = TARGET_WIDTH;
+            processCanvas.height = canvas.height;
+            const ctx = processCanvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, TARGET_WIDTH, processCanvas.height);
+            ctx.drawImage(canvas, 0, 0, TARGET_WIDTH, processCanvas.height);
+
+            const imgData = ctx.getImageData(0, 0, TARGET_WIDTH, processCanvas.height).data;
+            const height = processCanvas.height;
             const escposData = [];
 
-            // คำสั่งเครื่องพิมพ์ ESC/POS
-            // 1. กำหนดระยะบรรทัด 2. จัดกึ่งกลาง 
-            escposData.push(0x1B, 0x33, 0x00, 0x1B, 0x61, 0x01);
+            // คำสั่งเครื่องพิมพ์ ESC/POS พื้นฐาน
+            escposData.push(0x1B, 0x40); // Initialize
+            escposData.push(0x1B, 0x33, 0x00); // Line spacing 0
+            escposData.push(0x1B, 0x61, 0x01); // Center align
 
-            // 3. Raster Bit Image Command (GS v 0)
+            // เริ่มคำสั่งพิมพ์ภาพ (GS v 0)
             escposData.push(0x1D, 0x76, 0x30, 0x00);
             escposData.push(bytesPerRow % 256, Math.floor(bytesPerRow / 256));
             escposData.push(height % 256, Math.floor(height / 256));
 
-            // แปลงพิกเซลสีให้เป็นขาวดำ (Monochrome threshold)
+            // แปลงสีเป็นขาวดำ
             for (let y = 0; y < height; y++) {
                 for (let x = 0; x < bytesPerRow; x++) {
                     let byte = 0;
                     for (let bit = 0; bit < 8; bit++) {
                         const px = (x * 8) + bit;
-                        if (px < width) {
-                            const idx = (y * width + px) * 4;
-                            const r = imgData[idx]; const g = imgData[idx+1]; const b = imgData[idx+2]; const a = imgData[idx+3];
-                            // ความสว่าง < 128 ถือว่าเป็นสีดำ ให้สั่งพิมพ์ (bit = 1)
-                            const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
-                            if (a > 128 && luminance < 128) {
-                                byte |= (1 << (7 - bit));
-                            }
-                        }
+                        const idx = (y * TARGET_WIDTH + px) * 4;
+                        const r = imgData[idx]; const g = imgData[idx+1]; const b = imgData[idx+2]; const a = imgData[idx+3];
+                        const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+                        if (a > 128 && luminance < 128) byte |= (1 << (7 - bit));
                     }
                     escposData.push(byte);
                 }
             }
 
-            // 4. สั่งเลื่อนกระดาษ 5 บรรทัด และตัดกระดาษ (GS V)
+            // เลื่อนกระดาษและตัด 
             escposData.push(0x1B, 0x64, 0x05, 0x1D, 0x56, 0x41, 0x10);
 
-            // ส่งข้อมูลผ่าน Bluetooth (แบ่งเป็น Chunk เล็กๆ ป้องกัน Buffer ล้นในเครื่องพิมพ์จีน)
             showLoading("กำลังส่งข้อมูลเข้าเครื่องพิมพ์...");
-            const CHUNK_SIZE = 256; 
+            // ลดขนาด Chunk เป็น 100 ไบต์ และหน่วงเวลาเพิ่มขึ้น เพื่อป้องกันเครื่องพิมพ์ค้าง
+            const CHUNK_SIZE = 100; 
             const dataArray = new Uint8Array(escposData);
             try {
                 for (let i = 0; i < dataArray.length; i += CHUNK_SIZE) {
                     const chunk = dataArray.slice(i, i + CHUNK_SIZE);
                     await printCharacteristic.writeValue(chunk);
-                    // หน่วงเวลาเล็กน้อยให้เครื่องพิมพ์เขียนข้อมูลทัน
-                    await new Promise(resolve => setTimeout(resolve, 20));
+                    await new Promise(resolve => setTimeout(resolve, 30)); 
                 }
                 closeLoading();
             } catch(e) {
-                closeLoading();
-                throw e;
+                closeLoading(); throw e;
             }
         }
 
-        // รวบรวมข้อมูลลงใบเสร็จ
         function prepareTicket(receiptID, ticketID, timestamp, payMethod) {
             let movie = globalData.movies.find(m => (m.ID || m.id) === (currentShowtime.MovieID || currentShowtime.movieID));
             
-            // นำข้อมูลลง HTML #ticket-print-area
             let printLogo = document.getElementById('print-logo');
             if(globalData.settings.LogoBase64) {
-                printLogo.src = globalData.settings.LogoBase64;
-                printLogo.style.display = "block";
-            } else {
-                printLogo.style.display = "none";
-            }
+                printLogo.src = globalData.settings.LogoBase64; printLogo.style.display = "block";
+            } else { printLogo.style.display = "none"; }
             
             document.getElementById('print-shopname').innerText = globalData.settings.ShopName || "CINEMA";
             document.getElementById('print-date').innerText = timestamp;
@@ -867,34 +753,24 @@
             document.getElementById('print-receipt-id').innerText = receiptID;
             document.getElementById('print-ticket-id').innerText = ticketID;
 
-            // Generate Barcode & QR Code
-            JsBarcode("#barcode", receiptID, {
-                format: "CODE128", width: 3, height: 80, displayValue: false, margin: 0
-            });
+            JsBarcode("#barcode", receiptID, { format: "CODE128", width: 3, height: 80, displayValue: false, margin: 0 });
             document.getElementById('qrcode').innerHTML = "";
-            new QRCode(document.getElementById('qrcode'), {
-                text: ticketID, width: 200, height: 200, colorDark : "#000000", colorLight : "#ffffff"
-            });
+            new QRCode(document.getElementById('qrcode'), { text: ticketID, width: 200, height: 200, colorDark : "#000000", colorLight : "#ffffff" });
 
-            // รอภาพและกราฟิกเรนเดอร์ให้สมบูรณ์ แล้วแปลงเป็นภาพส่งเข้าเครื่องปริ้น
             setTimeout(async () => {
                 const element = document.getElementById('ticket-print-area');
-                
                 if (printCharacteristic) {
-                    // หากต่อ Bluetooth ไว้ -> พิมพ์เงียบแบบอัตโนมัติ
                     try {
-                        const canvas = await html2canvas(element, { scale: 1, backgroundColor: "#ffffff" });
+                        // บังคับ Scale: 1 เท่านั้น ป้องกันมือถือปรับความละเอียดจนภาพล้นทะลุ Bluetooth
+                        const canvas = await html2canvas(element, { scale: 1, backgroundColor: "#ffffff", windowWidth: 576, width: 576 });
                         await printCanvasOverBluetooth(canvas);
                     } catch (e) {
-                        console.error(e);
-                        Swal.fire('ข้อผิดพลาด', 'มีปัญหาในการส่งภาพไปยังเครื่องพิมพ์', 'error');
+                        console.error(e); Swal.fire('ข้อผิดพลาด', 'พิมพ์ขัดข้อง โปรดลองใหม่', 'error');
                     }
                 } else {
-                    // หากไม่ได้ต่อ Bluetooth -> เด้งหน้าต่างปริ้นของเบราว์เซอร์แทน (Fallback)
                     window.print();
                 }
-                
-                loadSeatMap(); // รีเซ็ตที่นั่งเตรียมรับลูกค้าคนต่อไป
+                loadSeatMap();
             }, 800);
         }
     </script>
