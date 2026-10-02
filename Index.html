@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cinema POS</title>
+<style>
+:root{--navy:#111827;--navy2:#1f2937;--bg:#f5f6f8;--card:#fff;--line:#e5e7eb;--text:#111827;--muted:#6b7280;--blue:#2563eb;--green:#16a34a;--red:#dc2626;--gray:#9ca3af;--shadow:0 10px 30px rgba(15,23,42,.07)}
+*{box-sizing:border-box}html,body{margin:0;padding:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai",sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+.app{min-height:100vh}.login{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(145deg,#eef1f5,#fff)}
+.login-card{width:min(430px,100%);background:#fff;border:1px solid var(--line);border-radius:22px;padding:30px;box-shadow:var(--shadow)}
+.logo{width:58px;height:58px;border-radius:16px;background:var(--navy);display:grid;place-items:center;color:#fff;font-weight:800;font-size:20px;overflow:hidden}.logo img{width:100%;height:100%;object-fit:contain;background:#fff}
+.brand{display:flex;gap:14px;align-items:center;margin-bottom:26px}.brand h1{font-size:20px;margin:0}.brand p{font-size:13px;color:var(--muted);margin:4px 0 0}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}.field{margin-bottom:15px}input,select,textarea{width:100%;border:1px solid #d9dde4;border-radius:11px;padding:11px 12px;outline:none;background:#fff}input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700}.btn.primary{background:var(--navy);color:#fff}.btn.blue{background:var(--blue);color:#fff}.btn.green{background:var(--green);color:#fff}.btn.danger{background:#fee2e2;color:#991b1b}.btn.light{background:#f3f4f6;color:#374151}.btn:disabled{opacity:.5;cursor:not-allowed}
+.shell{display:grid;grid-template-columns:245px 1fr;min-height:100vh}.sidebar{background:var(--navy);color:#fff;padding:18px;position:sticky;top:0;height:100vh}.side-brand{display:flex;align-items:center;gap:10px;padding:7px 5px 20px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:15px}.side-brand .logo{width:40px;height:40px;border-radius:12px;font-size:14px;background:#fff;color:var(--navy)}.side-brand strong{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nav{display:grid;gap:5px}.nav button{background:transparent;color:#cbd5e1;border:0;text-align:left;padding:11px 12px;border-radius:9px;display:flex;gap:10px;align-items:center}.nav button.active,.nav button:hover{background:rgba(255,255,255,.09);color:#fff}.side-bottom{position:absolute;left:18px;right:18px;bottom:18px}.content{min-width:0}.topbar{height:64px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:10}.page{padding:24px}.page-title{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px}.page-title h2{font-size:23px;margin:0}.page-title p{margin:5px 0 0;color:var(--muted);font-size:13px}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 3px 12px rgba(0,0,0,.025)}.stat .muted{font-size:13px;color:var(--muted)}.stat strong{font-size:27px;display:block;margin-top:8px}.table-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:15px}.table{width:100%;border-collapse:collapse;min-width:720px}.table th,.table td{padding:12px 13px;border-bottom:1px solid var(--line);font-size:13px;text-align:left}.table th{background:#f9fafb;font-weight:800}.table tr:last-child td{border-bottom:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:14px}.toolbar>*{width:auto}.search{min-width:230px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:100}.modal-backdrop.open{display:flex}.modal{background:#fff;border-radius:18px;width:min(650px,100%);max-height:90vh;overflow:auto;box-shadow:0 20px 70px rgba(0,0,0,.2)}.modal-head{padding:17px 19px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.modal-head h3{margin:0;font-size:17px}.modal-body{padding:19px}.modal-foot{padding:14px 19px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.pos-grid{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:15px}.pos-panel{background:#fff;border:1px solid var(--line);border-radius:17px;padding:16px}.pos-controls{display:grid;grid-template-columns:1fr 1fr 120px;gap:10px;margin-bottom:15px}.screen{width:70%;margin:0 auto 22px;text-align:center;background:#111827;color:#fff;padding:7px;border-radius:0 0 25px 25px;font-size:11px;letter-spacing:2px}.seat-map{display:grid;gap:7px;justify-content:center;overflow:auto;padding:10px}.seat-row{display:flex;gap:7px;justify-content:center}.seat{width:42px;height:38px;border-radius:8px;border:1px solid #d1d5db;background:#e5e7eb;color:#fff;font-size:11px;font-weight:800}.seat.blue{background:#2563eb;border-color:#1d4ed8}.seat.red{background:#dc2626;border-color:#b91c1c}.seat.selected{background:#111827;border-color:#111827;box-shadow:0 0 0 3px #fff,0 0 0 5px #111827}.seat.sold{background:#9ca3af;border-color:#9ca3af;cursor:not-allowed}.seat-label{font-size:10px;margin-top:8px;color:#6b7280;text-align:center}.selected-list{min-height:100px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:7px}.chip{background:#f3f4f6;border:1px solid #e5e7eb;padding:7px 9px;border-radius:9px;font-size:12px;font-weight:700}.total{border-top:1px solid var(--line);margin-top:15px;padding-top:15px;display:flex;justify-content:space-between;font-size:17px;font-weight:800}.pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pay{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px;font-weight:700}.pay.active{border-color:var(--navy);background:#f3f4f6}
+.poster{width:46px;height:64px;object-fit:cover;border-radius:7px;background:#eee}.movie-cell{display:flex;align-items:center;gap:10px}.badge{display:inline-flex;padding:4px 8px;border-radius:999px;background:#f3f4f6;font-size:11px;font-weight:700}.badge.green{background:#dcfce7;color:#166534}.badge.red{background:#fee2e2;color:#991b1b}
+.toast{position:fixed;right:18px;bottom:18px;background:#111827;color:#fff;padding:12px 15px;border-radius:11px;z-index:300;box-shadow:var(--shadow);max-width:350px;font-size:13px}.loading{position:fixed;inset:0;background:rgba(255,255,255,.65);display:grid;place-items:center;z-index:250}.spinner{width:38px;height:38px;border:4px solid #e5e7eb;border-top-color:#111827;border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.print-area{display:none}
+@media(max-width:1000px){.shell{grid-template-columns:70px 1fr}.sidebar{padding:12px}.side-brand strong,.nav span,.side-bottom span{display:none}.side-brand{justify-content:center}.nav button{justify-content:center}.side-bottom{left:12px;right:12px}.cards{grid-template-columns:repeat(2,1fr)}.pos-grid{grid-template-columns:1fr}.pos-controls{grid-template-columns:1fr 1fr}.pos-controls .btn{grid-column:span 2}}
+@media(max-width:600px){.sidebar{display:none}.shell{display:block}.topbar{padding:0 15px}.page{padding:15px}.cards{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.pos-controls{grid-template-columns:1fr}.pos-controls .btn{grid-column:auto}.seat{width:35px;height:34px}.pos-panel{padding:10px}.page-title h2{font-size:20px}}
+@media print{body>*{display:none!important}.print-area{display:block!important}.print-ticket{width:72mm;margin:0 auto;color:#000;font-family:"Noto Sans Thai",Arial,sans-serif;font-size:11px}.print-ticket .center{text-align:center}.print-ticket .big{font-size:16px;font-weight:800}.print-ticket .line{border-top:1px dashed #000;margin:7px 0}.print-ticket table{width:100%;border-collapse:collapse}.print-ticket td{padding:2px 0;vertical-align:top}.print-ticket .right{text-align:right}.no-print{display:none!important}}
+</style>
+</head>
+<body>
+
+<div id="loading" class="loading hidden"><div class="spinner"></div></div>
+<div id="toast" class="toast hidden"></div>
+
+<section id="loginScreen" class="login">
+  <div class="login-card">
+    <div class="brand">
+      <div id="loginLogo" class="logo">CP</div>
+      <div><h1 id="loginName">MY CINEMA</h1><p>ระบบจำหน่ายตั๋วภาพยนตร์</p></div>
+    </div>
+    <form id="loginForm">
+      <div class="field"><label>ชื่อผู้ใช้</label><input id="loginUser" autocomplete="username" required></div>
+      <div class="field"><label>รหัสผ่าน</label><input id="loginPass" type="password" autocomplete="current-password" required></div>
+      <button class="btn primary" style="width:100%;padding:12px">เข้าสู่ระบบ</button>
+    </form>
+    <p style="color:#9ca3af;font-size:11px;margin:15px 0 0">เริ่มต้น: admin / admin123</p>
+  </div>
+</section>
+
+<section id="appScreen" class="app hidden">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="side-brand"><div id="sideLogo" class="logo">CP</div><strong id="sideName">MY CINEMA</strong></div>
+      <nav id="nav" class="nav">
+        <button data-page="dashboard" class="active"><b>▦</b><span>Dashboard</span></button>
+        <button data-page="pos"><b>▣</b><span>ขายตั๋ว</span></button>
+        <button data-page="movies"><b>◫</b><span>ภาพยนตร์</span></button>
+        <button data-page="showtimes"><b>◷</b><span>รอบฉาย</span></button>
+        <button data-page="halls"><b>▤</b><span>โรงและที่นั่ง</span></button>
+        <button data-page="sales"><b>▤</b><span>รายการขาย</span></button>
+        <button data-page="tickets"><b>▤</b><span>ตั๋ว</span></button>
+        <button data-page="users" data-admin-only><b>♙</b><span>พนักงาน</span></button>
+        <button data-page="settings" data-admin-only><b>⚙</b><span>ตั้งค่าระบบ</span></button>
+      </nav>
+      <div class="side-bottom"><button id="logoutBtn" class="btn light" style="width:100%">ออกจากระบบ <span>↪</span></button></div>
+    </aside>
+    <main class="content">
+      <header class="topbar"><div id="topTitle" style="font-weight:800">Dashboard</div><div id="topUser" style="font-size:12px;color:#6b7280"></div></header>
+      <div id="page" class="page"></div>
+    </main>
+  </div>
+</section>
+
+<div id="modalBackdrop" class="modal-backdrop"><div id="modal" class="modal"></div></div>
+
+<div id="printArea" class="print-area"></div>
+
+<script>
+/*
+ * GitHub frontend
+ * Set API_URL to the deployed Google Apps Script Web App /exec URL.
+ *
+ * Printer:
+ * 1. Chrome/Edge desktop
+ * 2. Printer must expose a Serial device compatible with Web Serial
+ * 3. User clicks "เชื่อมต่อเครื่องพิมพ์"
+ * 4. Sale -> sends ESC/POS bytes directly to printer
+ *
+ * If your thermal printer is USB-only and does not expose Web Serial,
+ * use the printer manufacturer's driver/bridge. A normal web page cannot
+ * silently access arbitrary USB printers.
+ */
+const API_URL = 'PUT_YOUR_GOOGLE_APPS_SCRIPT_EXEC_URL_HERE';
+
+const state = {
+  token: localStorage.getItem('cinema_token') || '',
+  user: JSON.parse(localStorage.getItem('cinema_user') || 'null'),
+  settings: {},
+  movies: [],
+  halls: [],
+  showtimes: [],
+  selectedShowtime: '',
+  seatMap: null,
+  selectedSeats: [],
+  payment: 'CASH',
+  currentPage: 'dashboard',
+  dashboard: null,
+  printer: {port:null,writer:null,connected:false}
+};
+
+const $ = id => document.getElementById(id);
+const money = n => Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc = s => String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const uidLocal = () => Math.random().toString(36).slice(2);
+
+function showLoading(v=true){$('loading').classList.toggle('hidden',!v)}
+function toast(msg){$('toast').textContent=msg;$('toast').classList.remove('hidden');clearTimeout(window.__toast);window.__toast=setTimeout(()=>$('toast').classList.add('hidden'),3000)}
+function openModal(html){$('modal').innerHTML=html;$('modalBackdrop').classList.add('open')}
+function closeModal(){$('modalBackdrop').classList.remove('open');$('modal').innerHTML=''}
+$('modalBackdrop').addEventListener('click',e=>{if(e.target.id==='modalBackdrop')closeModal()});
+
+function jsonp(params){
+  return new Promise((resolve,reject)=>{
+    if(!API_URL || API_URL.includes('PUT_YOUR')) return reject(new Error('ยังไม่ได้ตั้งค่า API_URL ใน Index.html'));
+    const cb='jsonp_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const script=document.createElement('script');
+    const query=new URLSearchParams({...params,callback:cb}).toString();
+    const timer=setTimeout(()=>{cleanup();reject(new Error('API timeout'))},30000);
+    function cleanup(){clearTimeout(timer);delete window[cb];script.remove()}
+    window[cb]=data=>{cleanup();resolve(data)};
+    script.onerror=()=>{cleanup();reject(new Error('เชื่อมต่อ Google Apps Script ไม่สำเร็จ'))};
+    script.src=API_URL+'?'+query;
+    document.body.appendChild(script);
+  });
+}
+
+async function api(action,data={}){
+  const p={action,token:state.token};
+  Object.keys(data).forEach(k=>{
+    p[k]=typeof data[k]==='object'?JSON.stringify(data[k]):data[k];
+  });
+  return jsonp(p);
+}
+
+async function boot(){
+  try{
+    showLoading(true);
+    const r=await api('bootstrap');
+    if(!r.ok) throw new Error(r.error||'โหลดระบบไม่สำเร็จ');
+    state.settings=r.settings||{};
+    state.movies=r.movies||[];
+    state.halls=r.halls||[];
+    state.showtimes=r.showtimes||[];
+    applyBrand();
+    if(state.token && state.user){
+      const session=r.session;
+      if(session){state.user=session;enterApp();await loadDashboard()}
+      else{logoutLocal()}
+    }
+  }catch(e){toast(e.message)}
+  finally{showLoading(false)}
+}
+
+function applyBrand(){
+  const name=state.settings.cinemaName||'MY CINEMA';
+  $('loginName').textContent=name;$('sideName').textContent=name;
+  const logo=state.settings.logo||'';
+  ['loginLogo','sideLogo'].forEach(id=>{
+    const el=$(id);
+    if(logo) el.innerHTML='<img src="'+esc(logo)+'">';
+    else el.textContent=name.slice(0,2).toUpperCase();
+  });
+}
+
+function enterApp(){
+  $('loginScreen').classList.add('hidden');$('appScreen').classList.remove('hidden');
+  $('topUser').textContent=(state.user.displayName||state.user.username)+' · '+state.user.role;
+  document.querySelectorAll('[data-admin-only]').forEach(el=>el.classList.toggle('hidden',state.user.role!=='admin'));
+  goPage(state.currentPage||'dashboard');
+}
+
+function logoutLocal(){
+  localStorage.removeItem('cinema_token');localStorage.removeItem('cinema_user');
+  state.token='';state.user=null;$('appScreen').classList.add('hidden');$('loginScreen').classList.remove('hidden');
+}
+
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  try{
+    showLoading(true);
+    const r=await api('login',{username:$('loginUser').value.trim(),password:$('loginPass').value});
+    if(!r.ok) throw new Error(r.error);
+    state.token=r.token;state.user=r.user;
+    localStorage.setItem('cinema_token',r.token);localStorage.setItem('cinema_user',JSON.stringify(r.user));
+    enterApp();await refreshData();toast('เข้าสู่ระบบสำเร็จ');
+  }catch(e){toast(e.message)}finally{showLoading(false)}
+});
+
+$('logoutBtn').onclick=async()=>{
+  try{await api('logout')}catch(_){}
+  logoutLocal();
+};
+
+document.querySelectorAll('#nav button').forEach(btn=>btn.onclick=()=>goPage(btn.dataset.page));
+
+async function refreshData(){
+  const r=await api('bootstrap');
+  if(!r.ok) throw new Error(r.error);
+  state.settings=r.settings||{};state.movies=r.movies||[];state.halls=r.halls||[];state.showtimes=r.showtimes||[];
+  applyBrand();
+}
+
+async function goPage(page){
+  if(state.user && state.user.role!=='admin' && ['users','settings'].includes(page)) page='dashboard';
+  state.currentPage=page;
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
+  const titles={dashboard:'Dashboard',pos:'ขายตั๋ว',movies:'ภาพยนตร์',showtimes:'รอบฉาย',halls:'โรงและที่นั่ง',sales:'รายการขาย',tickets:'ตั๋ว',users:'พนักงาน',settings:'ตั้งค่าระบบ'};
+  $('topTitle').textContent=titles[page]||page;
+  try{
+    if(page==='dashboard')await renderDashboard();
+    else if(page==='pos')await renderPOS();
+    else if(page==='movies')renderMovies();
+    else if(page==='showtimes')renderShowtimes();
+    else if(page==='halls')renderHalls();
+    else if(page==='sales')await renderSales();
+    else if(page==='tickets')await renderTickets();
+    else if(page==='users')await renderUsers();
+    else if(page==='settings')renderSettings();
+  }catch(e){toast(e.message)}
+}
+
+async function loadDashboard(){
+  const r=await api('dashboard');
+  if(r.ok)state.dashboard=r.cards;
+}
+
+async function renderDashboard(){
+  $('page').innerHTML='<div class="page-title"><div><h2>Dashboard</h2><p>ภาพรวมการดำเนินงานของโรงภาพยนตร์</p></div></div><div id="dashCards"></div>';
+  await loadDashboard();
+  const d=state.dashboard||{};
+  $('dashCards').innerHTML='<div class="cards">'+
+    stat('ภาพยนตร์',d.movies||0)+stat('รอบฉาย',d.showtimes||0)+stat('รายการขายวันนี้',d.todaySales||0)+stat('รายได้วันนี้','฿ '+money(d.todayRevenue||0))+
+    '</div><div class="card" style="margin-top:15px"><b>สถานะระบบ</b><p style="color:#6b7280;font-size:13px">ฐานข้อมูล Google Sheets เชื่อมต่อแล้ว · เวอร์ชันระบบ '+esc(state.settings.version||'1.0')+'</p></div>';
+}
+function stat(a,b){return '<div class="card stat"><div class="muted">'+a+'</div><strong>'+esc(b)+'</strong></div>'}
+
+function renderMovies(){
+  $('page').innerHTML='<div class="page-title"><div><h2>ภาพยนตร์</h2><p>จัดการข้อมูลภาพยนตร์และโปสเตอร์</p></div><button class="btn primary" onclick="movieForm()">+ เพิ่มภาพยนตร์</button></div>'+
+  '<div class="table-wrap"><table class="table"><thead><tr><th>ภาพ</th><th>ชื่อหนัง</th><th>ความยาว</th><th>เรต</th><th>สถานะ</th><th></th></tr></thead><tbody>'+
+  state.movies.map(m=>'<tr><td><img class="poster" src="'+esc(m.poster||'')+'"></td><td><b>'+esc(m.title)+'</b><div style="color:#9ca3af;font-size:11px">'+esc(m.description||'')+'</div></td><td>'+esc(m.durationMin||0)+' นาที</td><td>'+esc(m.rating||'-')+'</td><td>'+badge(m.status!=='INACTIVE','ใช้งาน','ปิด')+'</td><td><button class="btn light" onclick="movieForm(\''+esc(m.id)+'\')">แก้ไข</button> <button class="btn danger" onclick="deleteItem(\'deleteMovie\',\''+esc(m.id)+'\')">ลบ</button></td></tr>').join('')+
+  '</tbody></table></div>';
+}
+function badge(ok,a,b){return '<span class="badge '+(ok?'green':'red')+'">'+(ok?a:b)+'</span>'}
+
+function movieForm(id=''){
+  const m=state.movies.find(x=>x.id===id)||{title:'',description:'',durationMin:120,poster:'',rating:'',status:'ACTIVE'};
+  openModal('<div class="modal-head"><h3>'+ (id?'แก้ไขภาพยนตร์':'เพิ่มภาพยนตร์')+'</h3><button class="btn light" onclick="closeModal()">×</button></div>'+
+  '<div class="modal-body"><div class="field"><label>ชื่อภาพยนตร์</label><input id="mf_title" value="'+esc(m.title)+'"></div><div class="grid2"><div class="field"><label>ความยาว (นาที)</label><input id="mf_duration" type="number" value="'+esc(m.durationMin)+'"></div><div class="field"><label>เรตติ้ง</label><input id="mf_rating" value="'+esc(m.rating||'')+'"></div></div><div class="field"><label>คำอธิบาย</label><textarea id="mf_desc">'+esc(m.description||'')+'</textarea></div><div class="field"><label>รูปปกหนัง</label><input id="mf_poster" type="file" accept="image/*"><div id="posterPreview" style="margin-top:8px">'+(m.poster?'<img class="poster" src="'+esc(m.poster)+'">':'')+'</div></div><div class="field"><label>สถานะ</label><select id="mf_status"><option value="ACTIVE" '+(m.status==='ACTIVE'?'selected':'')+'>ใช้งาน</option><option value="INACTIVE" '+(m.status==='INACTIVE'?'selected':'')+'>ปิด</option></select></div></div>'+
+  '<div class="modal-foot"><button class="btn light" onclick="closeModal()">ยกเลิก</button><button class="btn primary" onclick="saveMovie(\''+esc(id)+'\')">บันทึก</button></div>');
+  $('mf_poster').onchange=async e=>{
+    const f=e.target.files[0];if(!f)return;
+    $('posterPreview').innerHTML='<span style="font-size:12px;color:#6b7280">กำลังอ่านรูป...</span>';
+    const data=await fileToDataURL(f);$('posterPreview').innerHTML='<img class="poster" src="'+esc(data)+'">';$('mf_poster').dataset.data=data;
+  };
+}
+async function saveMovie(id){
+  try{
+    showLoading(true);
+    let poster=state.movies.find(x=>x.id===id)?.poster||'';
+    if($('mf_poster').dataset.data)poster=$('mf_poster').dataset.data;
+    const data={id,title:$('mf_title').value.trim(),durationMin:Number($('mf_duration').value),rating:$('mf_rating').value,description:$('mf_desc').value,poster,status:$('mf_status').value};
+    const r=await api('saveMovie',{data});if(!r.ok)throw new Error(r.error);
+    await refreshData();closeModal();renderMovies();toast('บันทึกภาพยนตร์แล้ว');
+  }catch(e){toast(e.message)}finally{showLoading(false)}
+}
+
+function renderHalls(){
+  $('page').innerHTML='<div class="page-title"><div><h2>โรงและที่นั่ง</h2><p>กำหนดขนาดโรงและราคาที่นั่ง</p></div><button class="btn primary" onclick="hallForm()">+ เพิ่มโรง</button></div>'+
+  '<div class="table-wrap"><table class="table"><thead><tr><th>โรง</th><th>ขนาด</th><th>ราคา Blue</th><th>ราคา Red</th><th>ที่นั่ง</th><th></th></tr></thead><tbody>'+
+  state.halls.map(h=>'<tr><td><b>'+esc(h.name)+'</b><div style="font-size:11px;color:#9ca3af">'+esc(h.screenLabel||'SCREEN')+'</div></td><td>'+h.rows+' × '+h.cols+'</td><td>฿ '+money(h.bluePrice)+'</td><td>฿ '+money(h.redPrice)+'</td><td>'+state.halls.find(x=>x.id===h.id)?.seats?.length||''+'</td><td><button class="btn light" onclick="hallForm(\''+esc(h.id)+'\')">แก้ไข</button> <button class="btn danger" onclick="deleteItem(\'deleteHall\',\''+esc(h.id)+'\')">ลบ</button></td></tr>').join('')+
+  '</tbody></table></div>';
+}
+function hallForm(id=''){
+  const h=state.halls.find(x=>x.id===id)||{name:'',rows:8,cols:12,bluePrice:100,redPrice:150,screenLabel:'SCREEN 1',status:'ACTIVE'};
+  openModal('<div class="modal-head"><h3>'+ (id?'แก้ไขโรง':'เพิ่มโรงภาพยนตร์')+'</h3><button class="btn light" onclick="closeModal()">×</button></div><div class="modal-body">'+
+  '<div class="field"><label>ชื่อโรง</label><input id="hf_name" value="'+esc(h.name)+'"></div><div class="grid2"><div class="field"><label>จำนวนแถว</label><input id="hf_rows" type="number" min="1" value="'+h.rows+'"></div><div class="field"><label>จำนวนคอลัมน์</label><input id="hf_cols" type="number" min="1" value="'+h.cols+'"></div><div class="field"><label>ราคาที่นั่ง Blue</label><input id="hf_blue" type="number" value="'+h.bluePrice+'"></div><div class="field"><label>ราคาที่นั่ง Red</label><input id="hf_red" type="number" value="'+h.redPrice+'"></div></div><div class="field"><label>ข้อความหน้าจอ</label><input id="hf_screen" value="'+esc(h.screenLabel||'SCREEN 1')+'"></div></div><div class="modal-foot"><button class="btn light" onclick="closeModal()">ยกเลิก</button><button class="btn primary" onclick="saveHall(\''+esc(id)+'\')">บันทึก</button></div>');
+}
+async function saveHall(id){
+  try{showLoading(true);const data={id,name:$('hf_name').value.trim(),rows:Number($('hf_rows').value),cols:Number($('hf_cols').value),bluePrice:Number($('hf_blue').value),redPrice:Number($('hf_red').value),screenLabel:$('hf_screen').value,status:'ACTIVE'};const r=await api('saveHall',{data});if(!r.ok)throw Error(r.error);await refreshData();closeModal();renderHalls();toast('บันทึกโรงแล้ว')}catch(e){toast(e.message)}finally{showLoading(false)}
+}
+
+function renderShowtimes(){
+  $('page').innerHTML='<div class="page-title"><div><h2>รอบฉาย</h2><p>กำหนดภาพยนตร์ โรง วัน เวลา และราคา</p></div><button class="btn primary" onclick="showtimeForm()">+ เพิ่มรอบฉาย</button></div>'+
+  '<div class="table-wrap"><table class="table"><thead><tr><th>ภาพยนตร์</th><th>โรง</th><th>วันที่</th><th>เวลา</th><th>ราคา</th><th>สถานะ</th><th></th></tr></thead><tbody>'+
+  state.showtimes.map(s=>{const m=state.movies.find(x=>x.id===s.movieId)||{},h=state.halls.find(x=>x.id===s.hallId)||{};return '<tr><td><b>'+esc(m.title||'-')+'</b></td><td>'+esc(h.name||'-')+'</td><td>'+esc(s.showDate)+'</td><td>'+esc(s.showTime)+'</td><td>฿ '+money(s.priceBlue)+' / '+money(s.priceRed)+'</td><td>'+badge(s.status!=='CANCELLED','เปิด','ยกเลิก')+'</td><td><button class="btn light" onclick="showtimeForm(\''+esc(s.id)+'\')">แก้ไข</button> <button class="btn danger" onclick="deleteItem(\'deleteShowtime\',\''+esc(s.id)+'\')">ลบ</button></td></tr>'}).join('')+
+  '</tbody></table></div>';
+}
+function showtimeForm(id=''){
+  const s=state.showtimes.find(x=>x.id===id)||{movieId:state.movies[0]?.id||'',hallId:state.halls[0]?.id||'',showDate:new Date().toISOString().slice(0,10),showTime:'18:00',priceBlue:100,priceRed:150,status:'ACTIVE'};
+  openModal('<div class="modal-head"><h3>'+ (id?'แก้ไขรอบฉาย':'เพิ่มรอบฉาย')+'</h3><button class="btn light" onclick="closeModal()">×</button></div><div class="modal-body"><div class="field"><label>ภาพยนตร์</label><select id="sf_movie">'+state.movies.map(m=>'<option value="'+esc(m.id)+'" '+(m.id===s.movieId?'selected':'')+'>'+esc(m.title)+'</option>').join('')+'</select></div><div class="field"><label>โรง</label><select id="sf_hall">'+state.halls.map(h=>'<option value="'+esc(h.id)+'" '+(h.id===s.hallId?'selected':'')+'>'+esc(h.name)+'</option>').join('')+'</select></div><div class="grid2"><div class="field"><label>วันที่</label><input id="sf_date" type="date" value="'+esc(s.showDate)+'"></div><div class="field"><label>เวลา</label><input id="sf_time" type="time" value="'+esc(s.showTime)+'"></div><div class="field"><label>ราคา Blue</label><input id="sf_blue" type="number" value="'+s.priceBlue+'"></div><div class="field"><label>ราคา Red</label><input id="sf_red" type="number" value="'+s.priceRed+'"></div></div></div><div class="modal-foot"><button class="btn light" onclick="closeModal()">ยกเลิก</button><button class="btn primary" onclick="saveShowtime(\''+esc(id)+'\')">บันทึก</button></div>');
+}
+async function saveShowtime(id){
+  try{showLoading(true);const data={id,movieId:$('sf_movie').value,hallId:$('sf_hall').value,showDate:$('sf_date').value,showTime:$('sf_time').value,priceBlue:Number($('sf_blue').value),priceRed:Number($('sf_red').value),status:'ACTIVE'};const r=await api('saveShowtime',{data});if(!r.ok)throw Error(r.error);await refreshData();closeModal();renderShowtimes();toast('บันทึกรอบฉายแล้ว')}catch(e){toast(e.message)}finally{showLoading(false)}
+}
+
+async function renderPOS(){
+  state.selectedSeats=[];state.selectedShowtime='';
+  $('page').innerHTML='<div class="page-title"><div><h2>ขายตั๋ว</h2><p>เลือกภาพยนตร์ รอบฉาย และที่นั่ง</p></div><button class="btn light" onclick="connectPrinter()">เชื่อมต่อเครื่องพิมพ์</button></div>'+
+  '<div class="pos-grid"><div class="pos-panel"><div class="pos-controls"><select id="posMovie"><option value="">เลือกภาพยนตร์</option>'+state.movies.filter(m=>m.status!=='INACTIVE').map(m=>'<option value="'+esc(m.id)+'">'+esc(m.title)+'</option>').join('')+'</select><select id="posShowtime"><option value="">เลือกรอบฉาย</option></select><button class="btn blue" onclick="loadSeatMap()">ค้นหา</button></div><div id="seatArea" style="color:#9ca3af;text-align:center;padding:50px 10px">เลือกรอบฉายแล้วกดค้นหาเพื่อแสดงผังที่นั่ง</div></div><div class="pos-panel"><b>รายการที่เลือก</b><div id="selectedList" class="selected-list" style="margin-top:13px"></div><div class="total"><span>รวม</span><span id="posTotal">฿ 0.00</span></div><div style="margin-top:15px"><b style="font-size:13px">ช่องทางชำระเงิน</b><div class="pay-grid" style="margin-top:8px"><button class="pay active" data-pay="CASH">เงินสด</button><button class="pay" data-pay="QR">QR</button><button class="pay" data-pay="CARD">บัตร</button><button class="pay" data-pay="OTHER">อื่น ๆ</button></div></div><button class="btn green" style="width:100%;margin-top:15px;padding:13px" onclick="completeSale()">ชำระเงินและออกตั๋ว</button></div></div>';
+  $('posMovie').onchange=()=>updateShowtimeOptions();
+  document.querySelectorAll('.pay').forEach(b=>b.onclick=()=>{state.payment=b.dataset.pay;document.querySelectorAll('.pay').forEach(x=>x.classList.toggle('active',x===b))});
+}
+function updateShowtimeOptions(){
+  const movie=$('posMovie').value;
+  $('posShowtime').innerHTML='<option value="">เลือกรอบฉาย</option>'+state.showtimes.filter(s=>s.movieId===movie&&s.status!=='CANCELLED').map(s=>'<option value="'+esc(s.id)+'">'+esc(s.showDate)+' · '+esc(s.showTime)+' · '+esc((state.halls.find(h=>h.id===s.hallId)||{}).name||'')+'</option>').join('');
+}
+async function loadSeatMap(){
+  const id=$('posShowtime').value;if(!id){toast('กรุณาเลือกรอบฉาย');return}
+  try{showLoading(true);const r=await api('seatmap',{showtimeId:id});if(!r.ok)throw Error(r.error);state.selectedShowtime=id;state.seatMap=r;state.selectedSeats=[];drawSeats()}catch(e){toast(e.message)}finally{showLoading(false)}
+}
+function drawSeats(){
+  const h=state.seatMap.hall,seats=state.seatMap.seats;
+  const rows={};seats.forEach(s=>(rows[s.rowNo]??=[]).push(s));
+  let html='<div class="screen">'+esc(h.screenLabel||'SCREEN')+'</div><div class="seat-map">';
+  Object.keys(rows).sort((a,b)=>a-b).forEach(r=>{
+    html+='<div class="seat-row">'+rows[r].sort((a,b)=>a.colNo-b.colNo).map(s=>'<button class="seat '+String(s.seatType).toLowerCase()+(s.sold?' sold':'')+'" '+(s.sold?'disabled':'')+' onclick="toggleSeat(\''+esc(s.id)+'\')">'+esc(s.seatCode)+'</button>').join('')+'</div>';
+  });
+  html+='</div><div class="seat-label">สีน้ำเงิน = Blue · สีแดง = Red · สีเทา = ขายแล้ว · สีดำ = เลือก</div>';
+  $('seatArea').innerHTML=html;
+}
+function toggleSeat(id){
+  const s=state.seatMap.seats.find(x=>x.id===id);if(!s||s.sold)return;
+  const idx=state.selectedSeats.findIndex(x=>x.id===id);
+  if(idx>=0)state.selectedSeats.splice(idx,1);else state.selectedSeats.push(s);
+  drawSeats();updateSelected();
+}
+function updateSelected(){
+  const st=state.showtimes.find(x=>x.id===state.selectedShowtime);
+  $('selectedList').innerHTML=state.selectedSeats.length?state.selectedSeats.map(s=>'<span class="chip">'+esc(s.seatCode)+' · ฿ '+money(String(s.seatType).toUpperCase()==='RED'?st.priceRed:st.priceBlue)+'</span>').join(''):'<span style="color:#9ca3af;font-size:12px">ยังไม่ได้เลือกที่นั่ง</span>';
+  const total=state.selectedSeats.reduce((a,s)=>a+(String(s.seatType).toUpperCase()==='RED'?Number(st.priceRed):Number(st.priceBlue)),0);
+  $('posTotal').textContent='฿ '+money(total);
+}
+async function completeSale(){
+  if(!state.selectedSeats.length){toast('กรุณาเลือกที่นั่ง');return}
+  try{
+    showLoading(true);
+    const r=await api('createSale',{data:{showtimeId:state.selectedShowtime,seats:state.selectedSeats.map(s=>({seatId:s.id})),paymentMethod:state.payment,discount:0}});
+    if(!r.ok)throw Error(r.error);
+    toast('ขายสำเร็จ '+r.sale.saleNo);
+    await printSale(r.sale,r.settings);
+    await loadSeatMap();
+  }catch(e){toast(e.message)}finally{showLoading(false)}
+}
+
+function renderSales(){
+  $('page').innerHTML='<div class="page-title"><div><h2>รายการขาย</h2><p>ประวัติการจำหน่ายตั๋ว</p></div></div><div class="table-wrap" id="salesTable">กำลังโหลด...</div>';
+  api('sales').then(r=>{
+    if(!r.ok)throw Error(r.error);
+    $('salesTable').innerHTML='<table class="table"><thead><tr><th>เลขที่</th><th>วันที่</th><th>พนักงาน</th><th>ชำระ</th><th>ยอดรวม</th><th>สถานะ</th></tr></thead><tbody>'+r.items.reverse().map(s=>'<tr><td><b>'+esc(s.saleNo)+'</b></td><td>'+esc(s.saleDateTime)+'</td><td>'+esc(s.staffName)+'</td><td>'+esc(s.paymentMethod)+'</td><td>฿ '+money(s.total)+'</td><td>'+badge(s.status==='PAID',s.status,'ยกเลิก')+'</td></tr>').join('')+'</tbody></table>';
+  }).catch(e=>toast(e.message));
+}
+function renderTickets(){
+  $('page').innerHTML='<div class="page-title"><div><h2>ตั๋ว</h2><p>ค้นหาและพิมพ์ตั๋วซ้ำ</p></div></div><div class="table-wrap" id="ticketsTable">กำลังโหลด...</div>';
+  api('tickets').then(r=>{
+    if(!r.ok)throw Error(r.error);
+    $('ticketsTable').innerHTML='<table class="table"><thead><tr><th>Ticket</th><th>หนัง</th><th>วัน</th><th>เวลา</th><th>ที่นั่ง</th><th>ราคา</th><th></th></tr></thead><tbody>'+r.items.reverse().map(t=>'<tr><td>'+esc(t.ticketNo)+'</td><td><b>'+esc(t.movieTitle)+'</b></td><td>'+esc(t.showDate)+'</td><td>'+esc(t.showTime)+'</td><td>'+esc(t.seatCode)+'</td><td>฿ '+money(t.price)+'</td><td><button class="btn light" onclick="printExistingTicket(\''+esc(t.id)+'\')">พิมพ์</button></td></tr>').join('')+'</tbody></table>';
+  }).catch(e=>toast(e.message));
+}
+async function printExistingTicket(id){
+  const r=await api('tickets');if(!r.ok)return toast(r.error);const t=r.items.find(x=>x.id===id);if(!t)return;
+  const s=state.settings;const sale={saleNo:t.ticketNo,movieTitle:t.movieTitle,showDate:t.showDate,showTime:t.showTime,hallName:(state.halls.find(h=>h.id===t.hallId)||{}).name||'',paymentMethod:'',subtotal:t.price,discount:0,total:t.price,tickets:[t]};
+  printSale(sale,s);
+}
+
+function renderUsers(){
+  api('users').then(r=>{
+    if(!r.ok)throw Error(r.error);
+    $('page').innerHTML='<div class="page-title"><div><h2>พนักงาน</h2><p>จัดการบัญชีผู้ใช้งาน</p></div><button class="btn primary" onclick="userForm()">+ เพิ่มพนักงาน</button></div><div class="table-wrap"><table class="table"><thead><tr><th>ชื่อผู้ใช้</th><th>ชื่อแสดง</th><th>สิทธิ์</th><th>สถานะ</th><th></th></tr></thead><tbody>'+r.items.map(u=>'<tr><td>'+esc(u.username)+'</td><td>'+esc(u.displayName)+'</td><td>'+esc(u.role)+'</td><td>'+badge(u.active,'ใช้งาน','ปิด')+'</td><td><button class="btn light" onclick="userForm(\''+esc(u.id)+'\')">แก้ไข</button></td></tr>').join('')+'</tbody></table></div>';
+  }).catch(e=>toast(e.message));
+}
+function userForm(id=''){
+  api('users').then(r=>{
+    const u=r.items.find(x=>x.id===id)||{username:'',displayName:'',role:'staff',active:true};
+    openModal('<div class="modal-head"><h3>'+ (id?'แก้ไขพนักงาน':'เพิ่มพนักงาน')+'</h3><button class="btn light" onclick="closeModal()">×</button></div><div class="modal-body"><div class="field"><label>ชื่อผู้ใช้</label><input id="uf_user" value="'+esc(u.username)+'"></div><div class="field"><label>รหัสผ่าน</label><input id="uf_pass" type="password" placeholder="'+(id?'เว้นว่างเพื่อไม่เปลี่ยน':'รหัสผ่าน')+'"></div><div class="field"><label>ชื่อแสดง</label><input id="uf_name" value="'+esc(u.displayName)+'"></div><div class="grid2"><div class="field"><label>สิทธิ์</label><select id="uf_role"><option value="staff" '+(u.role==='staff'?'selected':'')+'>พนักงาน</option><option value="admin" '+(u.role==='admin'?'selected':'')+'>ผู้ดูแลระบบ</option></select></div><div class="field"><label>สถานะ</label><select id="uf_active"><option value="true" '+(u.active?'selected':'')+'>ใช้งาน</option><option value="false" '+(!u.active?'selected':'')+'>ปิด</option></select></div></div></div><div class="modal-foot"><button class="btn light" onclick="closeModal()">ยกเลิก</button><button class="btn primary" onclick="saveUser(\''+esc(id)+'\')">บันทึก</button></div>');
+  });
+}
+async function saveUser(id){
+  try{showLoading(true);const old=id?await api('users'):null;const oldUser=id&&old.ok?old.items.find(x=>x.id===id):null;const data={id,username:$('uf_user').value.trim(),password:$('uf_pass').value||oldUser?.password||'',displayName:$('uf_name').value.trim(),role:$('uf_role').value,active:$('uf_active').value==='true'};const r=await api('saveUser',{data});if(!r.ok)throw Error(r.error);closeModal();renderUsers();toast('บันทึกผู้ใช้แล้ว')}catch(e){toast(e.message)}finally{showLoading(false)}
+}
+
+function renderSettings(){
+  const s=state.settings;
+  $('page').innerHTML='<div class="page-title"><div><h2>ตั้งค่าระบบ</h2><p>ข้อมูลโรงภาพยนตร์และรูปแบบตั๋ว</p></div></div><div class="card"><div class="grid2"><div class="field"><label>ชื่อโรงภาพยนตร์</label><input id="set_name" value="'+esc(s.cinemaName||'')+'"></div><div class="field"><label>เบอร์โทรศัพท์</label><input id="set_phone" value="'+esc(s.cinemaPhone||'')+'"></div></div><div class="field"><label>ที่อยู่</label><textarea id="set_address">'+esc(s.cinemaAddress||'')+'</textarea></div><div class="field"><label>โลโก้</label><input id="set_logo_file" type="file" accept="image/*"><div style="margin-top:8px">'+(s.logo?'<img class="poster" style="width:70px;height:70px" src="'+esc(s.logo)+'">':'ยังไม่มีโลโก้')+'</div></div><div class="grid2"><div class="field"><label>หัวตั๋ว</label><input id="set_header" value="'+esc(s.ticketHeader||'')+'"></div><div class="field"><label>ท้ายตั๋ว</label><input id="set_footer" value="'+esc(s.ticketFooter||'')+'"></div></div><button class="btn primary" onclick="saveSettings()">บันทึกการตั้งค่า</button><hr style="border:0;border-top:1px solid #eee;margin:20px 0"><b>เครื่องพิมพ์</b><p style="font-size:13px;color:#6b7280">ระบบรองรับ Web Serial สำหรับเครื่องพิมพ์ ESC/POS ที่เบราว์เซอร์มองเห็นได้</p><button class="btn light" onclick="connectPrinter()">เชื่อมต่อเครื่องพิมพ์</button> <button class="btn light" onclick="testPrinter()">ทดสอบพิมพ์</button><div id="printerStatus" style="font-size:12px;margin-top:8px;color:#6b7280"></div></div>';
+  $('set_logo_file').onchange=async e=>{const f=e.target.files[0];if(f){state.settings.logo=await fileToDataURL(f)}};
+}
+async function saveSettings(){
+  try{showLoading(true);const data={cinemaName:$('set_name').value,cinemaPhone:$('set_phone').value,cinemaAddress:$('set_address').value,ticketHeader:$('set_header').value,ticketFooter:$('set_footer').value,logo:state.settings.logo||''};const r=await api('saveSettings',{data});if(!r.ok)throw Error(r.error);state.settings=r.settings;applyBrand();toast('บันทึกการตั้งค่าแล้ว')}catch(e){toast(e.message)}finally{showLoading(false)}
+}
+
+async function deleteItem(action,id){
+  if(!confirm('ยืนยันการลบรายการนี้?'))return;
+  try{showLoading(true);const r=await api(action,{id});if(!r.ok)throw Error(r.error);await refreshData();goPage(state.currentPage);toast('ลบรายการแล้ว')}catch(e){toast(e.message)}finally{showLoading(false)}
+}
+
+function fileToDataURL(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)})}
+
+/* =========================
+   THERMAL PRINTER - WEB SERIAL
+   ========================= */
+
+async function connectPrinter(){
+  if(!('serial' in navigator)){toast('เบราว์เซอร์นี้ไม่รองรับ Web Serial กรุณาใช้ Chrome/Edge บนคอมพิวเตอร์ที่รองรับ');return}
+  try{
+    if(state.printer.port){await disconnectPrinter();return}
+    const port=await navigator.serial.requestPort();
+    await port.open({baudRate:9600});
+    state.printer.port=port;
+    state.printer.writer=port.writable.getWriter();
+    state.printer.connected=true;
+    updatePrinterStatus('เชื่อมต่อเครื่องพิมพ์แล้ว');
+    toast('เชื่อมต่อเครื่องพิมพ์แล้ว');
+  }catch(e){toast('เชื่อมต่อเครื่องพิมพ์ไม่สำเร็จ: '+e.message)}
+}
+async function disconnectPrinter(){
+  try{if(state.printer.writer){state.printer.writer.releaseLock();state.printer.writer=null}if(state.printer.port){await state.printer.port.close();state.printer.port=null}}catch(_){}
+  state.printer.connected=false;updatePrinterStatus('ยังไม่ได้เชื่อมต่อเครื่องพิมพ์');
+}
+function updatePrinterStatus(t){const el=$('printerStatus');if(el)el.textContent=t}
+async function printerWrite(bytes){
+  if(!state.printer.writer)throw new Error('ยังไม่ได้เชื่อมต่อเครื่องพิมพ์');
+  await state.printer.writer.write(bytes);
+}
+function concatBytes(...arrs){let n=arrs.reduce((a,b)=>a+b.length,0),o=new Uint8Array(n),p=0;arrs.forEach(a=>{o.set(a,p);p+=a.length});return o}
+function u8(a){return new Uint8Array(a)}
+function escposInit(){return u8([0x1b,0x40])}
+function escposAlign(n){return u8([0x1b,0x61,n])}
+function escposBold(on){return u8([0x1b,0x45,on?1:0])}
+function escposCut(){return u8([0x1d,0x56,0x00])}
+function escposFeed(n=3){return u8([0x1b,0x64,n])}
+function canvasTextBitmap(lines,width=576){
+  const fontSize=27,lineHeight=35,pad=18;
+  const canvas=document.createElement('canvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=width;canvas.height=Math.max(40,lines.length*lineHeight+pad*2);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#000';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.font='700 '+fontSize+'px "Noto Sans Thai",Arial,sans-serif';
+  lines.forEach((line,i)=>ctx.fillText(String(line),width/2,pad+lineHeight*i+lineHeight/2));
+  return canvas;
+}
+function canvasToRaster(canvas){
+  const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+  const data=ctx.getImageData(0,0,w,h).data;
+  const bytesPerRow=Math.ceil(w/8),out=new Uint8Array(bytesPerRow*h);
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const i=(y*w+x)*4;
+      const lum=(data[i]*299+data[i+1]*587+data[i+2]*114)/1000;
+      if(lum<160)out[y*bytesPerRow+(x>>3)]|=(0x80>>(x&7));
+    }
+  }
+  return {w,h,bytesPerRow,data:out};
+}
+function rasterCommand(canvas){
+  const r=canvasToRaster(canvas);
+  const header=u8([0x1d,0x76,0x30,0x00,r.bytesPerRow&255,(r.bytesPerRow>>8)&255,r.h&255,(r.h>>8)&255]);
+  return concatBytes(header,r.data);
+}
+async function printSale(sale,settings){
+  renderPrintableTicket(sale,settings);
+  if(state.printer.connected){
+    try{
+      await printSaleESCPOSEncode(sale,settings);
+      toast('ส่งตั๋วไปยังเครื่องพิมพ์แล้ว');
+      return;
+    }catch(e){toast('พิมพ์ตรงไม่สำเร็จ: '+e.message+' ระบบจะเปิดหน้าพิมพ์แทน')}
+  }
+  window.print();
+}
+function renderPrintableTicket(s,settings){
+  $('printArea').innerHTML='<div class="print-ticket"><div class="center big">'+esc(settings.cinemaName||'MY CINEMA')+'</div><div class="center">'+esc(settings.cinemaAddress||'')+'</div><div class="center">'+esc(settings.cinemaPhone||'')+'</div><div class="line"></div><div class="center big">'+esc(s.movieTitle||'')+'</div><div class="line"></div><table><tr><td>รอบ</td><td class="right">'+esc(s.showDate||'')+' '+esc(s.showTime||'')+'</td></tr><tr><td>โรง</td><td class="right">'+esc(s.hallName||'')+'</td></tr><tr><td>เลขที่</td><td class="right">'+esc(s.saleNo||'')+'</td></tr><tr><td>ชำระ</td><td class="right">'+esc(s.paymentMethod||'')+'</td></tr></table><div class="line"></div>'+((s.tickets||[]).map(t=>'<table><tr><td>ตั๋ว</td><td class="right">'+esc(t.ticketNo)+'</td></tr><tr><td>ที่นั่ง</td><td class="right"><b>'+esc(t.seatCode)+'</b></td></tr><tr><td>ประเภท</td><td class="right">'+esc(t.seatType)+'</td></tr><tr><td>ราคา</td><td class="right">฿ '+money(t.price)+'</td></tr></table><div class="line"></div>').join(''))+'<table><tr><td>รวม</td><td class="right"><b>฿ '+money(s.total)+'</b></td></tr></table><div class="center" style="margin-top:8px">'+esc(settings.ticketHeader||'')+'</div><div class="center">'+esc(settings.ticketFooter||'')+'</div></div>';
+}
+async function printSaleESCPOSEncode(s,settings){
+  const lines=[];
+  lines.push(settings.cinemaName||'MY CINEMA');
+  if(settings.cinemaAddress)lines.push(settings.cinemaAddress);
+  if(settings.cinemaPhone)lines.push('โทร '+settings.cinemaPhone);
+  lines.push('--------------------------------');
+  lines.push(s.movieTitle||'');
+  lines.push('รอบ '+(s.showDate||'')+' '+(s.showTime||''));
+  lines.push('โรง '+(s.hallName||''));
+  lines.push('เลขที่ '+(s.saleNo||''));
+  lines.push('--------------------------------');
+  (s.tickets||[]).forEach(t=>{
+    lines.push('ที่นั่ง '+t.seatCode+'  '+t.seatType);
+    lines.push('ตั๋ว '+t.ticketNo+'  ฿'+money(t.price));
+    lines.push('--------------------------------');
+  });
+  lines.push('รวม ฿'+money(s.total));
+  if(s.paymentMethod)lines.push('ชำระ '+s.paymentMethod);
+  lines.push('');
+  lines.push(settings.ticketHeader||'ขอบคุณที่ใช้บริการ');
+  lines.push(settings.ticketFooter||'กรุณาเก็บตั๋วไว้ตลอดการเข้าชม');
+
+  /*
+   * Rasterize every line as an image. This lets Thai text print without
+   * depending on the printer's Thai code page.
+   */
+  let bytes=escposInit();
+  bytes=concatBytes(bytes,escposAlign(1));
+  for(const line of lines){
+    const canvas=canvasTextBitmap([line],576);
+    bytes=concatBytes(bytes,rasterCommand(canvas),escposFeed(0));
+  }
+  bytes=concatBytes(bytes,escposFeed(4),escposCut());
+  await printerWrite(bytes);
+}
+async function testPrinter(){
+  if(!state.printer.connected){await connectPrinter();if(!state.printer.connected)return}
+  try{
+    const settings=state.settings;
+    const test={movieTitle:'ทดสอบระบบพิมพ์',showDate:new Date().toLocaleDateString('th-TH'),showTime:new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}),hallName:'TEST',saleNo:'TEST0001',paymentMethod:'TEST',total:0,tickets:[{ticketNo:'TEST-TICKET',seatCode:'A1',seatType:'BLUE',price:0}]};
+    await printSaleESCPOSEncode(test,settings);toast('ส่งงานพิมพ์ทดสอบแล้ว');
+  }catch(e){toast('ทดสอบพิมพ์ไม่สำเร็จ: '+e.message)}
+}
+
+boot();
+</script>
+</body>
+</html>
